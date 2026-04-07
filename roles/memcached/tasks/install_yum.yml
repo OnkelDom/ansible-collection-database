@@ -1,0 +1,5 @@
+---
+
+- name: Install memcached
+  ansible.builtin.yum:
+    name: "{{ _memcached_package_name }}"

@@ -1,0 +1,6 @@
+{{ ansible_managed | comment }}
+
+[{{ item.section }}]
+{% for key, value in item.options.items() %}
+{{ key }}={{ value }}
+{% endfor %}

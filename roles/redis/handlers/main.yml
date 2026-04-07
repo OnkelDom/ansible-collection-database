@@ -1,0 +1,20 @@
+---
+- name: Redis-server restart
+  ansible.builtin.debug:
+    msg:
+      - "****"
+      - "**** !!! MANUAL RESTART NEEDED !!!"
+      - "**** Immutable configuration changed, you have to restart redis manually"
+      - "****"
+  when:
+    - _redis_server_systemctl_start is defined
+    - _redis_server_systemctl_start is not changed
+
+- name: Redis-sentinel restart
+  ansible.builtin.systemd:
+    name: "redis-sentinel@{{ redis_sentinel_port }}.service"
+    state: restarted
+  when: >-
+    (_systemctl_start_redis_sentinel_ is not defined)
+    or
+    (_systemctl_start_redis_sentinel_.status.ActiveState != "inactive")

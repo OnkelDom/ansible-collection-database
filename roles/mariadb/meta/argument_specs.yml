@@ -1,0 +1,42 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure MariaDB.
+    options:
+      mariadb_version:
+        type: str
+        required: false
+        description:
+          - MariaDB version to install.
+      mariadb_port:
+        type: str
+        required: false
+        description:
+          - TCP port for the MariaDB service.
+      mariadb_bind_address:
+        type: str
+        required: false
+        description:
+          - Bind address for the MariaDB listener.
+      mariadb_enabled_on_startup:
+        type: bool
+        required: false
+        description:
+          - Whether the MariaDB service is enabled on boot.
+      mariadb_users:
+        type: list
+        elements: dict
+        required: false
+        description:
+          - User definitions managed by the role.
+      mariadb_databases:
+        type: list
+        elements: dict
+        required: false
+        description:
+          - Database definitions managed by the role.
+      mariadb_replication_role:
+        type: str
+        required: false
+        description:
+          - Replication mode of the node, for example primary or replica.

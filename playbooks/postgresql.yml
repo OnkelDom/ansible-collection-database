@@ -1,0 +1,6 @@
+---
+- name: Apply PostgreSQL role
+  hosts: all
+  gather_facts: true
+  roles:
+    - role: lenmail.database.postgresql

@@ -1,0 +1,14 @@
+---
+memcached_verbose: true
+memcached_memory: 64
+memcached_port: 11211
+memcached_user: null
+memcached_listen:
+  - 127.0.0.1
+memcached_maxconn: 1024
+
+memcached_extra_options: []
+
+memcached_restart: false
+
+memcached_process_path: "/usr/bin/memcached"

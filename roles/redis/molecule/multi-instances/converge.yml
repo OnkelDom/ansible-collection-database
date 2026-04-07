@@ -1,0 +1,17 @@
+---
+- name: First instance
+  hosts: all
+  vars:
+    redis_sentinel_enabled: false
+    redis_server_version: "latest"
+  roles:
+    - role: lenmail.database.redis
+
+- name: Second instance
+  hosts: all
+  vars:
+    redis_sentinel_enabled: false
+    redis_server_version: "latest"
+    redis_server_port: 6378
+  roles:
+    - role: lenmail.database.redis

@@ -1,0 +1,41 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure memcached.
+    options:
+      memcached_verbose:
+        type: bool
+        required: false
+        description:
+          - Enables verbose logging for memcached.
+      memcached_memory:
+        type: int
+        required: false
+        description:
+          - Memory in megabytes reserved for memcached.
+      memcached_port:
+        type: int
+        required: false
+        description:
+          - TCP port for memcached.
+      memcached_user:
+        type: str
+        required: false
+        description:
+          - Optional system user running memcached.
+      memcached_listen:
+        type: list
+        elements: str
+        required: false
+        description:
+          - Addresses memcached listens on.
+      memcached_maxconn:
+        type: int
+        required: false
+        description:
+          - Maximum number of concurrent client connections.
+      memcached_restart:
+        type: bool
+        required: false
+        description:
+          - Whether the role should force a restart.

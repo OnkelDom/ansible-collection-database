@@ -1,0 +1,59 @@
+---
+- name: Gather OS specific variables
+  ansible.builtin.include_vars: "{{ loop_vars }}"
+  loop: "{{ query('first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "{{ ansible_distro }}-{{ ansible_distro_version }}.yml"
+        - "{{ ansible_distro }}-{{ ansible_distro_release }}.yml"
+        - "{{ ansible_distro }}-{{ ansible_distro_major_version }}.yml"
+        - "{{ ansible_distro }}.yml"
+        - "{{ ansible_os_family | lower }}-family.yml"
+        - "{{ ansible_system | lower }}.yml"
+      paths:
+        - "vars"
+      skip: true
+  loop_control:
+    loop_var: loop_vars
+
+- name: Include "install_{{ ansible_pkg_mgr }}.yml"   # noqa name
+  ansible.builtin.include_tasks: "install_{{ ansible_pkg_mgr }}.yml"
+
+- name: Mask memcached service
+  ansible.builtin.systemd:
+    name: "{{ _memcached_package_name }}.service"
+    masked: true
+    state: stopped
+
+- name: Create systemd unit file for memcached
+  ansible.builtin.template:
+    src: etc/systemd/system/memcached@.service.j2
+    dest: /etc/systemd/system/memcached@.service
+    owner: root
+    group: root
+    mode: 0444
+  register: memcached_service
+
+- name: Delete default memcached configuration file
+  ansible.builtin.file:
+    path: "{{ _memcached_default_conf }}"
+    state: absent
+
+- name: Configure memcached
+  ansible.builtin.template:
+    src: etc/default/memcached.j2
+    dest: /etc/default/memcached_{{ memcached_port }}
+    owner: root
+    group: root
+    mode: 0444
+  notify:
+    - Warn that memcached should be restarted
+    - Systemctl restart memcached@{{ memcached_port }}.service
+
+- name: Activate memcached service
+  ansible.builtin.systemd:
+    name: memcached@{{ memcached_port }}.service
+    enabled: true
+    state: started
+    daemon_reload: "{{ memcached_service is changed }}"

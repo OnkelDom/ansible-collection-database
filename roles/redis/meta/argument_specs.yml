@@ -1,0 +1,40 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure Redis server and sentinel.
+    options:
+      redis_server_enabled:
+        type: bool
+        required: false
+        description:
+          - Whether the Redis server service should be configured.
+      redis_server_port:
+        type: int
+        required: false
+        description:
+          - TCP port for the Redis server.
+      redis_server_version:
+        type: raw
+        required: false
+        description:
+          - Redis package version to install.
+      redis_conf:
+        type: dict
+        required: false
+        description:
+          - Extra Redis server configuration entries.
+      redis_sentinel_enabled:
+        type: bool
+        required: false
+        description:
+          - Whether Redis Sentinel should be configured.
+      redis_sentinel_port:
+        type: int
+        required: false
+        description:
+          - TCP port for Redis Sentinel.
+      redis_sentinel_conf:
+        type: dict
+        required: false
+        description:
+          - Extra Sentinel configuration entries.

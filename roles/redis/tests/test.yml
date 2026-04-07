@@ -1,0 +1,6 @@
+---
+- name: Syntax test for Redis role
+  hosts: all
+  gather_facts: true
+  roles:
+    - role: lenmail.database.redis

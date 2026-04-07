@@ -1,0 +1,20 @@
+---
+- name: "Include tasks for install in {{ _ansible_os_family }}"
+  ansible.builtin.include_tasks: "{{ _ansible_os_family }}/install.yml"
+
+- name: Include {{ ansible_pkg_mgr + '/install.yml' }}
+  ansible.builtin.include_tasks: "{{ item }}"
+  loop: "{{ query('first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "{{ ansible_pkg_mgr }}/install.yml"
+      skip: true
+
+- name: Install pip dependencies (externally managed environments are also supported)
+  ansible.builtin.pip:
+    name: "{{ _mariadb_dependencies_pip_packages }}"
+    extra_args: "{{ _mariadb_python_env_externally_managed | ternary('--user --break-system-packages', '') }}"
+  when:
+    - mariadb_manage_pip_dependencies
+...

@@ -1,0 +1,3 @@
+# {{ ansible_managed }}
+
+OPTS={% if memcached_verbose %} -v {% endif %} -m {{ memcached_memory }} -p {{ memcached_port }} -u {{ _memcached_user }} {% for _memcached_listen_address in memcached_listen %} -l {{ _memcached_listen_address }} {% endfor %} -c {{ memcached_maxconn }} {% for _option in memcached_extra_options -%} -{{ _option }} {% endfor %}

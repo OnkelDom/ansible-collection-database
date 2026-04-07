@@ -1,0 +1,21 @@
+---
+dependencies: []
+
+galaxy_info:
+  author: Dominik Lenhardt <dominik@lenhardt-it.com>
+  company: Dominik Lenhardt IT-Services
+  description: Install and configure Redis
+  galaxy_tags:
+  - claranet
+  - redis
+  license: MIT
+  min_ansible_version: '2.10'
+  namespace: lenmail
+  platforms:
+  - name: Debian
+    versions:
+    - all
+  - name: Ubuntu
+    versions:
+    - all
+  role_name: redis

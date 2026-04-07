@@ -1,0 +1,59 @@
+---
+- name: Converge encryption
+  hosts: all
+
+  vars:
+    mariadb_debug: true
+    mariadb_version: "10.11"
+    mariadb_admin_password: root
+
+    mariadb_users_default_host: localhost
+    mariadb_users:
+      - name: user1
+        password: strong password1
+      - name: user2
+        password: strong password2
+        hosts:
+          - ::1
+          - 127.0.0.1
+          - 172.17.0.1
+      - name: user3
+        password: strong password3
+        host: '%'
+
+    mariadb_data_at_rest_encryption: true
+    mariadb_encryption_keygen_auto: true
+    mariadb_innodb_encrypt_tables: 'ON'
+    mariadb_innodb_encrypt_temporary_tables: 'ON'
+    mariadb_innodb_encrypt_log: 'ON'
+    mariadb_encrypt_binlog: 'ON'
+    mariadb_aria_encrypt_tables: 'ON'
+    mariadb_encrypt_tmp_disk_tables: 1
+    mariadb_encrypt_tmp_files: 1
+    mariadb_backup_mail_addr: admin@fakemail.com
+    mariadb_backup_keep_count: 3
+    mariadb_backup_schedule:
+      hour: 3
+      minute: 0
+
+    ansible_distro: "{{ ansible_distribution | lower | replace('\"', '') }}"
+
+  pre_tasks:
+    #  https://www.jeffgeerling.com/blog/2020/resolving-fedora-dnf-error-no-such-file-or-directory-varlibdnfrpmdblockpid
+    - name: Wait for systemd to complete initialization.  # noqa 303
+      ansible.builtin.command: systemctl is-system-running
+      register: systemctl_status
+      until: >
+        'running' in systemctl_status.stdout or
+        'degraded' in systemctl_status.stdout
+      retries: 30
+      delay: 5
+      when: >
+        ansible_service_mgr == 'systemd' and
+        ansible_distro in ("redhat", "centos", "fedora", "amazonlinux")
+      changed_when: false
+      ignore_errors: true  # because when the command returns degraded which is ok in this situation, the rc is still > 0
+      tags: [always]
+
+  roles:
+    - role: lenmail.database.mariadb

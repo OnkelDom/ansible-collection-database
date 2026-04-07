@@ -1,0 +1,42 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure PostgreSQL.
+    options:
+      postgresql_version:
+        type: int
+        required: false
+        description:
+          - PostgreSQL major version to install.
+      postgresql_port:
+        type: int
+        required: false
+        description:
+          - TCP port for PostgreSQL.
+      postgresql_listen_addresses:
+        type: str
+        required: false
+        description:
+          - Listen addresses written into postgresql.conf.
+      postgresql_service_enabled:
+        type: bool
+        required: false
+        description:
+          - Whether the PostgreSQL service is enabled on boot.
+      postgresql_users:
+        type: list
+        elements: dict
+        required: false
+        description:
+          - PostgreSQL roles and users to manage.
+      postgresql_databases:
+        type: list
+        elements: dict
+        required: false
+        description:
+          - PostgreSQL databases to manage.
+      postgresql_replication:
+        type: bool
+        required: false
+        description:
+          - Enables replication-related tasks.

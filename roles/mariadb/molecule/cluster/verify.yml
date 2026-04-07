@@ -1,0 +1,68 @@
+---
+- name: Verify setup
+  hosts: all
+
+  tasks:
+    - name: Check if mariadb package is installed or not
+      block:
+        - name: "Retrieve package facts"
+          package_facts:
+            manager: "auto"
+
+        - name: Ensure mariadb server package is installed
+          ansible.builtin.assert:
+            that:
+              - '"mariadb-server" in ansible_facts.packages or "MariaDB-server" in ansible_facts.packages'
+
+    - name: Get mariadb service status
+      ansible.builtin.systemd:
+        name: "mariadb"
+      register: mariadb_service
+
+    - name: Check that mariadb service is active and enabled
+      ansible.builtin.assert:
+        that:
+          - mariadb_service.status.ActiveState == 'active'
+          - mariadb_service.status.UnitFileState == 'enabled'
+
+    - name: Check if port 3306 is listening
+      ansible.builtin.wait_for:
+        port: 3306
+        delay: 5
+        timeout: 10
+        msg: "Timeout waiting for 3306 to respond"
+      register: port_check
+      ignore_errors: true
+
+- name: Verify replication
+  hosts: replica
+  tasks:
+    - name: "Retrieve replica replication status."
+      community.mysql.mysql_replication:
+        mode: getreplica
+      register: replica
+
+    - name: Check that replication is working
+      ansible.builtin.assert:
+        that:
+          - replica.Slave_IO_Running == "Yes"
+          - replica.Slave_SQL_Running == "Yes"
+          - replica.Slave_IO_State == "Waiting for master to send event"
+
+    - name: Ensure database db is replicated
+      ansible.builtin.include_tasks: verify_db_object.yml
+      vars:
+        query_create: create database db
+        query_select: show databases
+        query_delete: drop database db
+        db_obj_type: database
+        db_obj: db
+
+    - name: Ensure user tmp_user is replicated
+      ansible.builtin.include_tasks: verify_db_object.yml
+      vars:
+        query_create: create user tmp_user@localhost identified BY "tmp_pass"
+        query_select: select user from mysql.user
+        query_delete: drop user tmp_user@localhost
+        db_obj_type: user
+        db_obj: tmp_user

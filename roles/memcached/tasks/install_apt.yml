@@ -1,0 +1,6 @@
+---
+
+- name: Install memcached
+  ansible.builtin.apt:
+    name: "{{ _memcached_package_name }}"
+    policy_rc_d: 101

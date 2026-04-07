@@ -1,0 +1,16 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: Role with default option
+      ansible.builtin.include_role:
+        name: lenmail.database.memcached
+
+    - name: Role no default port
+      ansible.builtin.include_role:
+        name: lenmail.database.memcached
+      vars:
+        memcached_port: 11212
+        memcached_restart: true
+        memcached_extra_options:
+          - t 8

@@ -1,0 +1,11 @@
+---
+ansible_distro: "{{ ansible_distribution | lower | replace('\"', '') }}"
+ansible_distro_version: "{{ ansible_distribution_version | lower | replace('/', '_') }}"
+ansible_distro_release: "{{ ansible_distribution_release | lower }}"
+ansible_distro_major_version: "{{ ansible_distribution_major_version | lower | replace('/', '_') }}"
+
+_memcached_service_path: "/etc/systemd/system/memcached@.service"
+_memcached_default_conf: "/etc/memcached.conf"
+_memcached_package_name: "memcached"
+_memcached_user: "memcached"
+...
