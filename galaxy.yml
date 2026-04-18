@@ -5,7 +5,7 @@ version: 0.1.0
 readme: README.md
 authors:
   - Dominik Lenhardt <dominik@lenhardt-it.com>
-description: Ansible collection for database and caching services maintained under the lenmail namespace.
+description: Ansible collection for database and caching services maintained under the onkeldom namespace.
 license:
   - MIT
 tags:
@@ -15,8 +15,8 @@ tags:
   - redis
   - memcached
 dependencies: {}
-repository: https://github.com/lenmail/ansible-collection-database
-issues: https://github.com/lenmail/ansible-collection-database/issues
+repository: https://github.com/OnkelDom/ansible-collection-database
+issues: https://github.com/OnkelDom/ansible-collection-database/issues
 build_ignore:
   - .git
   - .github
