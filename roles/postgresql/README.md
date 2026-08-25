@@ -275,6 +275,26 @@ postgresql_backup_brweekly: 0
 postgresql_backup_brmontly: 0
 ```
 
+For encrypted custom-format dumps with count-based daily and weekly retention,
+systemd scheduling and a monthly restore test, use:
+
+```yaml
+postgresql_backup: true
+postgresql_backup_implementation: custom_encrypted
+postgresql_backup_dbnames: "application"
+postgresql_backup_encryption_passphrase: "{{ vault_postgresql_backup_passphrase }}"
+postgresql_backup_daily_retention: 7
+postgresql_backup_weekly_retention: 4
+postgresql_backup_metrics_file: /var/lib/node_exporter/textfile_collector/postgresql_backup.prom
+```
+
+The passphrase must come from Ansible Vault or another secret store. The custom
+implementation creates encrypted `pg_dump --format=custom` artifacts, never
+stores plaintext dumps after completion, and emits success/failure metrics for
+both the backup and the restore test. The metrics directory owner, group and
+mode can be adjusted with `postgresql_backup_metrics_directory_*` when the
+textfile collector directory is shared with other services.
+
 
 ### Create/Remove database users
 ----

@@ -8,9 +8,11 @@ _postgresql_packages:
   - python3-dev
   - python3-venv
   - postgresql-{{ postgresql_version }}
+  - postgresql-client-{{ postgresql_version }}
   - cron
+  - gnupg
   - libpq-dev
-  - nano
+  - vim
   - pg-activity
   # removed as it depends on the latest version of postgresql package, so it entails installing this package also install the latest postgresql server package and because
   # - postgresql-contrib

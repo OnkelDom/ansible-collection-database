@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+readonly BACKUP_ROOT={{ postgresql_backup_root_dir | quote }}
+readonly PASSPHRASE_FILE={{ postgresql_backup_passphrase_file | quote }}
+readonly RESTORE_DB={{ postgresql_backup_restore_test_database | quote }}
+readonly DAILY_RETENTION={{ postgresql_backup_daily_retention | int }}
+readonly WEEKLY_RETENTION={{ postgresql_backup_weekly_retention | int }}
+readonly WEEKLY_DAY={{ postgresql_backup_doweekly | int }}
+readonly METRICS_FILE={{ postgresql_backup_metrics_file | quote }}
+readonly DATABASES=({% for database in postgresql_backup_dbnames.split() %}{{ database | quote }} {% endfor %})
+readonly RUN_MODE="${1:-backup}"
+
+write_metrics() {
+  local backup_timestamp="$1" restore_timestamp="$2" backup_success="$3" restore_success="$4" size="$5" duration="$6"
+  [[ -z "${METRICS_FILE}" ]] && return 0
+  printf '%s\n' \
+    "# HELP postgresql_backup_last_success_timestamp_seconds Unix timestamp of the latest successful encrypted pg_dump." \
+    "# TYPE postgresql_backup_last_success_timestamp_seconds gauge" \
+    "postgresql_backup_last_success_timestamp_seconds ${backup_timestamp}" \
+    "# HELP postgresql_restore_test_last_success_timestamp_seconds Unix timestamp of the latest successful restore test." \
+    "# TYPE postgresql_restore_test_last_success_timestamp_seconds gauge" \
+    "postgresql_restore_test_last_success_timestamp_seconds ${restore_timestamp}" \
+    "# HELP postgresql_backup_last_size_bytes Size of the latest encrypted backup." \
+    "# TYPE postgresql_backup_last_size_bytes gauge" \
+    "postgresql_backup_last_size_bytes ${size}" \
+    "# HELP postgresql_backup_last_duration_seconds Duration of the latest backup run." \
+    "# TYPE postgresql_backup_last_duration_seconds gauge" \
+    "postgresql_backup_last_duration_seconds ${duration}" \
+    "# HELP postgresql_backup_run_success Whether the latest backup run succeeded." \
+    "# TYPE postgresql_backup_run_success gauge" \
+    "postgresql_backup_run_success ${backup_success}" \
+    "# HELP postgresql_restore_test_run_success Whether the latest restore test succeeded." \
+    "# TYPE postgresql_restore_test_run_success gauge" \
+    "postgresql_restore_test_run_success ${restore_success}" > "${METRICS_FILE}"
+}
+
+metric_value() {
+  local metric="$1"
+  [[ -r "${METRICS_FILE}" ]] || { echo 0; return; }
+  awk -v metric="${metric}" '$1 == metric { value=$2 } END { print value+0 }' "${METRICS_FILE}"
+}
+
+record_failure() {
+  local exit_code="$?" backup_success restore_success
+  trap - ERR
+  backup_success="$(metric_value postgresql_backup_run_success)"
+  restore_success="$(metric_value postgresql_restore_test_run_success)"
+  [[ "${RUN_MODE}" == "backup" ]] && backup_success=0
+  [[ "${RUN_MODE}" == "restore-test" ]] && restore_success=0
+  write_metrics \
+    "$(metric_value postgresql_backup_last_success_timestamp_seconds)" \
+    "$(metric_value postgresql_restore_test_last_success_timestamp_seconds)" \
+    "${backup_success}" "${restore_success}" \
+    "$(metric_value postgresql_backup_last_size_bytes)" \
+    "$(metric_value postgresql_backup_last_duration_seconds)"
+  exit "${exit_code}"
+}
+
+trap record_failure ERR
+
+rotate_count() {
+  local directory="$1" keep="$2"
+  find "${directory}" -maxdepth 1 -type f -name '*.dump.gpg' -printf '%T@ %p\n' \
+    | sort -nr | awk -v keep="${keep}" 'NR > keep {$1=""; sub(/^ /, ""); print}' \
+    | while IFS= read -r old_file; do [[ -n "${old_file}" ]] && rm -f -- "${old_file}"; done
+}
+
+run_backup() {
+  local started now database plain encrypted total_size=0
+  started="$(date +%s)"
+  now="$(date -u +%Y%m%dT%H%M%SZ)"
+  install -d -m 0750 "${BACKUP_ROOT}/daily" "${BACKUP_ROOT}/weekly"
+
+  for database in "${DATABASES[@]}"; do
+    plain="${BACKUP_ROOT}/daily/${database}-${now}.dump"
+    encrypted="${plain}.gpg"
+    trap 'rm -f -- "${plain:-}"' EXIT
+    pg_dump --format=custom --compress=6 --file="${plain}" --dbname="${database}"
+    gpg --batch --yes --pinentry-mode loopback --cipher-algo AES256 \
+      --passphrase-file "${PASSPHRASE_FILE}" --symmetric --output "${encrypted}" "${plain}"
+    chmod 0600 "${encrypted}"
+    rm -f -- "${plain}"
+    total_size=$((total_size + $(stat -c %s "${encrypted}")))
+    if [[ "$(date +%u)" == "${WEEKLY_DAY}" ]]; then
+      cp --preserve=mode,timestamps "${encrypted}" "${BACKUP_ROOT}/weekly/"
+    fi
+  done
+
+  rotate_count "${BACKUP_ROOT}/daily" "${DAILY_RETENTION}"
+  rotate_count "${BACKUP_ROOT}/weekly" "${WEEKLY_RETENTION}"
+  write_metrics \
+    "$(date +%s)" \
+    "$(metric_value postgresql_restore_test_last_success_timestamp_seconds)" \
+    1 "$(metric_value postgresql_restore_test_run_success)" \
+    "${total_size}" "$(( $(date +%s) - started ))"
+}
+
+run_restore_test() {
+  local latest temporary backup_success backup_size backup_duration
+  latest="$(find "${BACKUP_ROOT}/daily" -maxdepth 1 -type f -name '*.dump.gpg' -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
+  [[ -n "${latest}" ]] || { echo "No encrypted backup available" >&2; exit 1; }
+  temporary="$(mktemp --suffix=.dump)"
+  trap 'dropdb --if-exists "${RESTORE_DB}" >/dev/null 2>&1 || true; rm -f -- "${temporary:-}"' EXIT
+  gpg --batch --yes --pinentry-mode loopback --passphrase-file "${PASSPHRASE_FILE}" \
+    --decrypt --output "${temporary}" "${latest}"
+  dropdb --if-exists "${RESTORE_DB}"
+  createdb --encoding=UTF8 --template=template0 "${RESTORE_DB}"
+  pg_restore --exit-on-error --no-owner --no-privileges --dbname="${RESTORE_DB}" "${temporary}"
+  psql --dbname="${RESTORE_DB}" --tuples-only --command='SELECT 1' | grep -q 1
+  dropdb "${RESTORE_DB}"
+  rm -f -- "${temporary}"
+  backup_success="$(metric_value postgresql_backup_last_success_timestamp_seconds)"
+  backup_size="$(metric_value postgresql_backup_last_size_bytes)"
+  backup_duration="$(metric_value postgresql_backup_last_duration_seconds)"
+  write_metrics \
+    "${backup_success}" "$(date +%s)" \
+    "$(metric_value postgresql_backup_run_success)" 1 \
+    "${backup_size}" "${backup_duration}"
+}
+
+case "${RUN_MODE}" in
+  backup) run_backup ;;
+  restore-test) run_restore_test ;;
+  *) echo "Usage: $0 [backup|restore-test]" >&2; exit 2 ;;
+esac
