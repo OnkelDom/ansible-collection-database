@@ -23,6 +23,49 @@ argument_specs:
         required: false
         description:
           - Whether the PostgreSQL service is enabled on boot.
+      postgresql_backup:
+        type: bool
+        required: false
+        description:
+          - Whether PostgreSQL backup management is enabled.
+      postgresql_backup_implementation:
+        type: str
+        required: false
+        choices:
+          - legacy
+          - custom_encrypted
+        description:
+          - Backup implementation to deploy.
+      postgresql_backup_encryption_passphrase:
+        type: str
+        required: false
+        description:
+          - Vault-backed passphrase for encrypted custom-format backups.
+      postgresql_backup_dbnames:
+        type: str
+        required: false
+        description:
+          - Space-separated list of databases to back up.
+      postgresql_backup_metrics_file:
+        type: str
+        required: false
+        description:
+          - Optional Prometheus textfile collector output path.
+      postgresql_backup_metrics_directory_owner:
+        type: str
+        required: false
+        description:
+          - Owner of the Prometheus textfile collector directory.
+      postgresql_backup_metrics_directory_group:
+        type: str
+        required: false
+        description:
+          - Group of the Prometheus textfile collector directory.
+      postgresql_backup_metrics_directory_mode:
+        type: str
+        required: false
+        description:
+          - Mode of the Prometheus textfile collector directory.
       postgresql_users:
         type: list
         elements: dict

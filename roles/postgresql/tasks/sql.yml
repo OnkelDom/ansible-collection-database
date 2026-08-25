@@ -17,6 +17,7 @@
     trust_input: "{{ item.trust_input | d(omit) }}"
   loop: "{{ postgresql_queries }}"
   no_log: "{{ postgres_users_no_log }}"
+  changed_when: item.changed_when | default(true)
   become: true
   become_user: "{{ postgresql_user }}"
   vars:

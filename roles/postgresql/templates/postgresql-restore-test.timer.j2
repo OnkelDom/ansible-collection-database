@@ -1,0 +1,11 @@
+{{ ansible_managed | comment }}
+[Unit]
+Description=Monthly PostgreSQL restore test
+
+[Timer]
+OnCalendar={{ postgresql_backup_restore_test_calendar }}
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

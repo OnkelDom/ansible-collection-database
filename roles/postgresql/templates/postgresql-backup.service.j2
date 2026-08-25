@@ -1,0 +1,16 @@
+{{ ansible_managed | comment }}
+[Unit]
+Description=Encrypted PostgreSQL custom-format backup
+After=postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+User={{ postgresql_user }}
+Group={{ postgresql_group }}
+ExecStart={{ postgresql_backup_custom_script_dest }} backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+PrivateTmp=true
+NoNewPrivileges=true

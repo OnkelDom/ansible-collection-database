@@ -311,6 +311,23 @@ postgresql_backup_brmontly: 12
 # Permissions with which them backups are created
 postgresql_backup_perm: "600"
 
+# Select "custom_encrypted" for pg_dump custom-format backups encrypted with
+# GnuPG and managed by systemd timers. The legacy implementation remains the
+# default for backwards compatibility.
+postgresql_backup_implementation: legacy
+postgresql_backup_encryption_passphrase: ""
+postgresql_backup_passphrase_file: /etc/postgresql/backup-passphrase
+postgresql_backup_daily_retention: 7
+postgresql_backup_weekly_retention: 4
+postgresql_backup_systemd_calendar: "*-*-* 01:30:00"
+postgresql_backup_restore_test_calendar: "*-*-01 04:30:00"
+postgresql_backup_restore_test_database: postgresql_restorecheck
+postgresql_backup_metrics_file: ""
+postgresql_backup_metrics_directory_owner: root
+postgresql_backup_metrics_directory_group: root
+postgresql_backup_metrics_directory_mode: "0755"
+postgresql_backup_custom_script_dest: /usr/local/sbin/postgresql-custom-backup
+
 
 # Proxy variables
 # These variables are combined into dictionnaries (_postgresql_general_proxy_env and _postgresql_pkg_proxy_env) to provide proxy variables to appropriate tasks.
