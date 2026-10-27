@@ -10,4 +10,4 @@ Use tools/generate_role_scaffold.py and tools/role_scaffold_config.yml for gener
 
 Run scaffold --check, pytest tests/unit, YAML lint, production Ansible lint, all role syntax checks, artifact build/install and compile/import sanity. Container smoke must converge on five free target images; real service, SELinux, reboot, replication, Patroni failover, backup and restore need disposable VMs. Document actual evidence and gaps in docs/validation; no production or repository publication is authorized by a refactor.
 
-GitHub target organization is degitag; Ansible namespace is degitag. Run the shared local entry point bash tests/run_checks.sh. Local toolchain uses Homebrew Python 3.12 and .venv. No credentials in logs, defaults or repository files.
+The current GitHub repository owner is OnkelDom; Ansible namespace is degitag. A repository transfer requires a separate operator decision. Run the shared local entry point bash tests/run_checks.sh. Local toolchain uses Homebrew Python 3.12 and .venv. No credentials in logs, defaults or repository files.

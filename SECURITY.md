@@ -2,7 +2,7 @@
 
 ## Schwachstellen melden
 
-Sicherheitsprobleme vertraulich über die private Schwachstellenmeldung des [GitHub-Repositories](https://github.com/degitag/ansible-collection-database/security) melden, sofern aktiviert. Andernfalls den Maintainer über einen bereits bekannten privaten Kontaktkanal erreichen. Öffentliche Issues und Pull Requests dürfen keine ausnutzbaren Details, Tokens, Passwörter, Inventories oder Datenbankinhalte enthalten.
+Sicherheitsprobleme vertraulich über die private Schwachstellenmeldung des [GitHub-Repositories](https://github.com/OnkelDom/ansible-collection-database/security) melden, sofern aktiviert. Andernfalls den Maintainer über einen bereits bekannten privaten Kontaktkanal erreichen. Öffentliche Issues und Pull Requests dürfen keine ausnutzbaren Details, Tokens, Passwörter, Inventories oder Datenbankinhalte enthalten.
 
 Eine Meldung soll betroffene Version, Rolle, Plattform, Voraussetzungen und einen bereinigten reproduzierbaren Ablauf enthalten. Kein produktives System allein zur Reproduktion verändern.
 

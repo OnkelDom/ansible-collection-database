@@ -21,8 +21,8 @@ dependencies:
   ansible.posix: '>=2.1.0,<3.0.0'
   ansible.mysql: '>=4.0.0,<5.0.0'
   community.postgresql: '>=4.1.0,<5.0.0'
-repository: https://github.com/degitag/ansible-collection-database
-issues: https://github.com/degitag/ansible-collection-database/issues
+repository: https://github.com/OnkelDom/ansible-collection-database
+issues: https://github.com/OnkelDom/ansible-collection-database/issues
 build_ignore:
 - .git
 - .github
@@ -57,5 +57,5 @@ build_ignore:
 - '.venv*'
 - '.env*'
 - '.zshenv*'
-documentation: https://github.com/degitag/ansible-collection-database
-homepage: https://github.com/degitag/ansible-collection-database
+documentation: https://github.com/OnkelDom/ansible-collection-database
+homepage: https://github.com/OnkelDom/ansible-collection-database
