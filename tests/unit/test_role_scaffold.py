@@ -34,3 +34,15 @@ def test_syntax_playbooks_reference_the_actual_collection_role() -> None:
     for role in iter_role_dirs():
         play = yaml.safe_load(build_role_files(config, role)[role / 'tests/test.yml'])[0]
         assert play['roles'][0]['role'] == f"{config['collection_namespace']}.{config['collection_name']}.{role.name}"
+
+
+def test_generated_sources_are_not_ignored_by_git() -> None:
+    import subprocess
+    config = load_config()
+    paths = [str(path.relative_to(ROOT)) for role in iter_role_dirs()
+             for path in build_role_files(config, role)]
+    result = subprocess.run(
+        ['git', 'check-ignore', '--no-index', '--stdin'], cwd=ROOT,
+        input='\n'.join(paths) + '\n', text=True, capture_output=True,
+    )
+    assert result.returncode == 1, result.stdout + result.stderr
