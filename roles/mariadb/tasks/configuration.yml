@@ -1,0 +1,38 @@
+---
+- name: Configure validate
+  ansible.builtin.import_tasks: validate.yml
+- name: Configure setup vars
+  ansible.builtin.import_tasks: setup-vars.yml
+- name: Configure install
+  ansible.builtin.import_tasks: install.yml
+- name: Configure encryption at rest
+  ansible.builtin.import_tasks: encryption-at-rest.yml
+  when: mariadb_data_at_rest_encryption
+- name: Configure configure
+  ansible.builtin.import_tasks: configure.yml
+- name: Apply pending MariaDB configuration before SQL management
+  ansible.builtin.meta: flush_handlers
+- name: Configure secure installation
+  ansible.builtin.import_tasks: secure-installation.yml
+  when: mariadb_manage_accounts and mariadb_service_state == 'started'
+- name: Configure replication primary
+  ansible.builtin.import_tasks: replication-primary.yml
+  when: mariadb_replication_role == 'primary' and mariadb_service_state == 'started'
+- name: Configure replication replica
+  ansible.builtin.import_tasks: replication-replica.yml
+  when: mariadb_replication_role == 'replica' and mariadb_service_state == 'started'
+- name: Configure users
+  ansible.builtin.import_tasks: users.yml
+  when: mariadb_manage_accounts and mariadb_service_state == 'started' and mariadb_replication_role != 'replica'
+- name: Configure databases
+  ansible.builtin.import_tasks: databases.yml
+  when: mariadb_manage_accounts and mariadb_service_state == 'started' and mariadb_replication_role != 'replica'
+- name: Configure backup
+  ansible.builtin.import_tasks: backup.yml
+  when: mariadb_backup
+- name: Delegate additive port rules to the host firewall
+  ansible.builtin.include_role:
+    name: degitag.infrastructure.firewall
+  vars:
+    firewall_rules: '{{ mariadb_firewall_sources | map(''community.general.dict_kv'', ''source'') | map(''combine'', {''port'': mariadb_port | string, ''proto'': ''tcp'', ''action'': ''allow''}) | list }}'
+  when: mariadb_manage_firewall

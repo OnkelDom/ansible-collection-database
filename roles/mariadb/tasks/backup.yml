@@ -1,30 +1,41 @@
 ---
+- name: Validate backup paths and retention
+  ansible.builtin.assert:
+    that:
+    - mariadb_backup_keep_count | int >= 1
+    - mariadb_backup_dbnames | length > 0
+    - mariadb_backup_root_dir is match('^/[A-Za-z0-9_/-]+$')
+    fail_msg: Backup requires a dedicated absolute root, selected databases and positive retention.
+- name: Install backup scheduling prerequisites
+  ansible.builtin.package:
+    name: '{{ (ansible_facts[''os_family''] == ''Debian'') | ternary([''cron'', ''gnupg''], [''cronie'', ''gnupg2'']) }}'
+    state: present
 - name: Create backup root directory
   ansible.builtin.file:
-    path: "{{ mariadb_backup_root_dir }}"
+    path: '{{ mariadb_backup_root_dir }}'
     state: directory
     owner: root
     group: root
-    mode: 0700
-
+    mode: '0700'
 - name: Template out automysqlbackup and clean_old_backups
   ansible.builtin.template:
-    src: "scripts/{{ item }}"
-    dest: "{{ mariadb_backup_root_dir }}/{{ item | basename | replace('.j2', '') }}"
+    src: scripts/{{ item }}
+    dest: '{{ mariadb_backup_root_dir }}/{{ item | basename | replace(''.j2'', '''') }}'
     owner: root
     group: root
-    mode: 0700
+    mode: '0700'
+    validate: bash -n %s
   loop:
-    - automysqlbackup.sh.j2
-    - clean_old_backups.sh.j2
-
+  - automysqlbackup.sh.j2
+  - clean_old_backups.sh.j2
 - name: Ensure a cron job that runs at specfied schedule exists"
   ansible.builtin.cron:
-    name: "{{ mariadb_backup_cron_job_name }}"
-    minute: "{{ mariadb_backup_schedule.minute | d(omit) }}"
-    hour: "{{ mariadb_backup_schedule.hour | d(omit) }}"
-    weekday: "{{ mariadb_backup_schedule.weekday | d(omit) }}"
-    day: "{{ mariadb_backup_schedule.day | d(omit) }}"
-    month: "{{ mariadb_backup_schedule.month | d(omit) }}"
+    name: '{{ mariadb_backup_cron_job_name }}'
+    minute: '{{ mariadb_backup_schedule.minute | d(omit) }}'
+    hour: '{{ mariadb_backup_schedule.hour | d(omit) }}'
+    weekday: '{{ mariadb_backup_schedule.weekday | d(omit) }}'
+    day: '{{ mariadb_backup_schedule.day | d(omit) }}'
+    month: '{{ mariadb_backup_schedule.month | d(omit) }}'
     user: root
-    job: "/bin/bash {{ mariadb_backup_root_dir }}/automysqlbackup.sh > /dev/null && /bin/bash {{ mariadb_backup_root_dir }}/clean_old_backups.sh > /dev/null"
+    job: /bin/bash {{ mariadb_backup_root_dir }}/automysqlbackup.sh > /dev/null && /bin/bash {{ mariadb_backup_root_dir }}/clean_old_backups.sh > /dev/null
+  when: mariadb_manage_backup_schedule

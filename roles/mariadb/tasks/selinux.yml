@@ -1,0 +1,71 @@
+---
+- name: Label the configured service TCP port
+  community.general.seport:
+    ports: '{{ mariadb_port }}'
+    proto: tcp
+    setype: mysqld_port_t
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Label managed mysqld_db_t paths
+  community.general.sefcontext:
+    target: '{{ mariadb_datadir }}(/.*)?'
+    setype: mysqld_db_t
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Inspect the managed SELinux path
+  ansible.builtin.stat:
+    path: '{{ mariadb_datadir }}'
+  register: _mariadb_label_path_2
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Apply managed mysqld_db_t labels
+  ansible.builtin.command:
+    argv:
+    - restorecon
+    - -R
+    - '{{ mariadb_datadir }}'
+  changed_when: false
+  when:
+  - ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+  - _mariadb_label_path_2.stat.exists | default(false)
+- name: Label managed mysqld_log_t paths
+  community.general.sefcontext:
+    target: '{{ mariadb_logs_datadir }}(/.*)?'
+    setype: mysqld_log_t
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Inspect the managed SELinux path
+  ansible.builtin.stat:
+    path: '{{ mariadb_logs_datadir }}'
+  register: _mariadb_label_path_5
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Apply managed mysqld_log_t labels
+  ansible.builtin.command:
+    argv:
+    - restorecon
+    - -R
+    - '{{ mariadb_logs_datadir }}'
+  changed_when: false
+  when:
+  - ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+  - _mariadb_label_path_5.stat.exists | default(false)
+- name: Label managed mysqld_etc_t paths
+  community.general.sefcontext:
+    target: '{{ mariadb_file_key_management_dir }}(/.*)?'
+    setype: mysqld_etc_t
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled' and mariadb_data_at_rest_encryption
+- name: Inspect the managed SELinux path
+  ansible.builtin.stat:
+    path: '{{ mariadb_file_key_management_dir }}'
+  register: _mariadb_label_path_8
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled' and mariadb_data_at_rest_encryption
+- name: Apply managed mysqld_etc_t labels
+  ansible.builtin.command:
+    argv:
+    - restorecon
+    - -R
+    - '{{ mariadb_file_key_management_dir }}'
+  changed_when: false
+  when:
+  - ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled' and mariadb_data_at_rest_encryption
+  - _mariadb_label_path_8.stat.exists | default(false)

@@ -1,0 +1,42 @@
+---
+- name: Validate service and lifecycle inputs before changes
+  ansible.builtin.assert:
+    that:
+    - postgresql_port | int >= 1
+    - postgresql_port | int <= 65535
+    - postgresql_service_state in ['started', 'stopped']
+    - not postgresql_manage_firewall or postgresql_firewall_sources | length > 0
+    - postgresql_deployment_mode in ['standalone', 'patroni']
+    - postgresql_deployment_mode == 'patroni' or postgresql_version | length == 0 or postgresql_version | string == _postgresql_default_version
+    - not postgresql_backup_restore_test_enabled or postgresql_backup_restore_test_database not in postgresql_backup_dbnames.split()
+    - not (postgresql_replication | default(false))
+    - not (postgresql_uninstall_1 | default(false)) and not (postgresql_uninstall_2 | default(false))
+    - postgresql_allow_data_migration or (postgresql_databases | selectattr('state', 'defined') | rejectattr('state', 'in', ['present', 'absent']) | list | length == 0)
+    fail_msg: Invalid postgresql inputs. Review the typed contract and docs/migration.md.
+    quiet: true
+- name: Inspect PostgreSQL initialization before package changes
+  ansible.builtin.stat:
+    path: '{{ _postgresql_data_dir }}/PG_VERSION'
+  register: _postgresql_before_install
+  when: postgresql_deployment_mode == 'standalone'
+- name: Require explicit permission before initializing a new PostgreSQL instance
+  ansible.builtin.assert:
+    that:
+    - _postgresql_before_install.stat.exists or (postgresql_initialize | bool)
+    fail_msg: Set postgresql_initialize=true for a new standalone cluster.
+  when: postgresql_deployment_mode == 'standalone'
+- name: Read the existing major version before selecting packages
+  ansible.builtin.slurp:
+    src: '{{ _postgresql_data_dir }}/PG_VERSION'
+  register: _postgresql_before_version
+  when:
+  - postgresql_deployment_mode == 'standalone'
+  - _postgresql_before_install.stat.exists
+- name: Reject a major-version mismatch before package changes
+  ansible.builtin.assert:
+    that:
+    - (_postgresql_before_version.content | b64decode | trim) == _postgresql_version | string
+    fail_msg: Existing PostgreSQL data uses a different major version. Plan a separate upgrade.
+  when:
+  - postgresql_deployment_mode == 'standalone'
+  - _postgresql_before_install.stat.exists

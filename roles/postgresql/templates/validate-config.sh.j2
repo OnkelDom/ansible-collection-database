@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+validation_file="$(mktemp {{ _postgresql_config_path | quote }}/.degit-validate-XXXXXX.conf)"
+trap 'rm -f -- "$validation_file"' EXIT
+cp -- "$1" "$validation_file"
+chown {{ postgresql_user | quote }}:{{ postgresql_group | quote }} "$validation_file"
+runuser -u {{ postgresql_user | quote }} -- {{ (_postgresql_bin_path ~ '/postgres') | quote }} -D {{ _postgresql_data_dir | quote }} -C port -c "config_file=$validation_file" >/dev/null

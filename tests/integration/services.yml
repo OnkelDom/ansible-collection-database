@@ -1,0 +1,63 @@
+---
+- name: Verify native database data paths on dedicated test hosts
+  hosts: baseline
+  become: true
+  gather_facts: true
+  tasks:
+  - name: Verify the MariaDB application database
+    ansible.builtin.command:
+      argv:
+      - mariadb
+      - --batch
+      - --skip-column-names
+      - -e
+      - SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='collection_test'
+    changed_when: false
+    register: _database_test_mariadb
+    failed_when: _database_test_mariadb.stdout != 'collection_test'
+  - name: Verify the PostgreSQL application database
+    ansible.builtin.command:
+      argv:
+      - psql
+      - -Atc
+      - SELECT datname FROM pg_database WHERE datname='collection_test'
+    become: true
+    become_user: postgres
+    changed_when: false
+    register: _database_test_postgresql
+    failed_when: _database_test_postgresql.stdout != 'collection_test'
+  - name: Write and read an isolated Redis probe
+    ansible.builtin.command:
+      argv:
+      - redis-cli
+      - SET
+      - degit-collection-test
+      - verified
+    changed_when: false
+  - name: Verify the Redis probe
+    ansible.builtin.command:
+      argv:
+      - redis-cli
+      - GET
+      - degit-collection-test
+    changed_when: false
+    register: _database_test_redis
+    failed_when: _database_test_redis.stdout != 'verified'
+  - name: Verify the Memcached protocol
+    ansible.builtin.command:
+      argv:
+      - /usr/bin/python3
+      - -c
+      - "import socket\nwith socket.create_connection(('127.0.0.1', 11211), timeout=5) as connection:\n    connection.sendall(b'set degit-collection-test 0 60 8\\r\\nverified\\r\\nget degit-collection-test\\r\\nquit\\r\\n')\n    output = b''\n    while True:\n        chunk = connection.recv(4096)\n        if not chunk:\n            break\n        output += chunk\n    assert b'STORED' in output and b'verified' in output, output\n"
+    changed_when: false
+  - name: Verify EL9 remains enforcing
+    ansible.builtin.command: getenforce
+    changed_when: false
+    register: _database_test_selinux
+    failed_when: _database_test_selinux.stdout != 'Enforcing'
+    when: ansible_facts['os_family'] == 'RedHat'
+  pre_tasks:
+  - name: Verify the explicit disposable test scope
+    ansible.builtin.assert:
+      that:
+      - database_test_disposable | default(false) | bool

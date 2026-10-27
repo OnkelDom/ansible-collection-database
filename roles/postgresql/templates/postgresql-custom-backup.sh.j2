@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+umask 077
+cd /
 
 readonly BACKUP_ROOT={{ postgresql_backup_root_dir | quote }}
 readonly PASSPHRASE_FILE={{ postgresql_backup_passphrase_file | quote }}
-readonly RESTORE_DB={{ postgresql_backup_restore_test_database | quote }}
+readonly RESTORE_DB_PREFIX={{ postgresql_backup_restore_test_database | quote }}
+readonly RESTORE_DB="${RESTORE_DB_PREFIX}_$$_${RANDOM}"
 readonly DAILY_RETENTION={{ postgresql_backup_daily_retention | int }}
 readonly WEEKLY_RETENTION={{ postgresql_backup_weekly_retention | int }}
 readonly WEEKLY_DAY={{ postgresql_backup_doweekly | int }}
 readonly METRICS_FILE={{ postgresql_backup_metrics_file | quote }}
 readonly DATABASES=({% for database in postgresql_backup_dbnames.split() %}{{ database | quote }} {% endfor %})
 readonly RUN_MODE="${1:-backup}"
+export PGPORT={{ postgresql_port | int }}
+{% if postgresql_backup_primary_only %}
+# Scheduled on every HA member; only the current primary runs backup/restore work.
+[[ "$(psql -Atqc 'SELECT pg_is_in_recovery()')" == "f" ]] || exit 0
+{% endif %}
 
 write_metrics() {
   local backup_timestamp="$1" restore_timestamp="$2" backup_success="$3" restore_success="$4" size="$5" duration="$6"
@@ -98,17 +106,19 @@ run_backup() {
 
 run_restore_test() {
   local latest temporary backup_success backup_size backup_duration
+  restore_created=false
   latest="$(find "${BACKUP_ROOT}/daily" -maxdepth 1 -type f -name '*.dump.gpg' -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
   [[ -n "${latest}" ]] || { echo "No encrypted backup available" >&2; exit 1; }
   temporary="$(mktemp --suffix=.dump)"
-  trap 'dropdb --if-exists "${RESTORE_DB}" >/dev/null 2>&1 || true; rm -f -- "${temporary:-}"' EXIT
+  trap 'if [[ "${restore_created:-false}" == true ]]; then dropdb --if-exists "${RESTORE_DB}" >/dev/null 2>&1 || true; fi; rm -f -- "${temporary:-}"' EXIT
   gpg --batch --yes --pinentry-mode loopback --passphrase-file "${PASSPHRASE_FILE}" \
     --decrypt --output "${temporary}" "${latest}"
-  dropdb --if-exists "${RESTORE_DB}"
   createdb --encoding=UTF8 --template=template0 "${RESTORE_DB}"
+  restore_created=true
   pg_restore --exit-on-error --no-owner --no-privileges --dbname="${RESTORE_DB}" "${temporary}"
   psql --dbname="${RESTORE_DB}" --tuples-only --command='SELECT 1' | grep -q 1
   dropdb "${RESTORE_DB}"
+  restore_created=false
   rm -f -- "${temporary}"
   backup_success="$(metric_value postgresql_backup_last_success_timestamp_seconds)"
   backup_size="$(metric_value postgresql_backup_last_size_bytes)"

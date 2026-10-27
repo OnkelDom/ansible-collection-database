@@ -1,0 +1,8 @@
+---
+_patroni_packages:
+- python3-pip
+- postgresql-libs
+- policycoreutils-python-utils
+_patroni_venv: /opt/patroni
+_patroni_config: /etc/patroni/patroni.yml
+_patroni_service: patroni

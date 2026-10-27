@@ -1,0 +1,93 @@
+---
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    name: Validate / core ${{ matrix.core }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        core: ['2.20', '2.21']
+    env:
+      ANSIBLE_HOME: ${{ github.workspace }}/.ansible
+      ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      with:
+        python-version: '3.12'
+        cache: pip
+        cache-dependency-path: requirements-test.txt
+    - name: Install controller dependencies
+      run: |
+        python -m pip install -r requirements-test.txt
+        python -m pip install 'ansible-core~=${{ matrix.core }}.0'
+        ansible-galaxy collection install -r requirements.yml
+    - name: Run shared repository checks
+      run: bash tests/run_checks.sh
+    - name: Read collection artifact name
+      id: artifact
+      run: |
+        python - <<'PYTHON' >> "$GITHUB_OUTPUT"
+        import yaml
+        info = yaml.safe_load(open('galaxy.yml'))
+        print(f"path={info['namespace']}-{info['name']}-{info['version']}.tar.gz")
+        PYTHON
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      if: matrix.core == '2.21'
+      with:
+        name: collection
+        path: ${{ steps.artifact.outputs.path }}
+        retention-days: 14
+
+  smoke:
+    name: Smoke / ${{ matrix.image }}
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu:22.04, ubuntu:24.04, ubuntu:26.04, debian:13, rockylinux:9]
+    env:
+      ANSIBLE_HOME: ${{ github.workspace }}/.ansible
+      ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
+      SMOKE_CONTAINER_IMAGE: ${{ matrix.image }}
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      with:
+        python-version: '3.12'
+        cache: pip
+        cache-dependency-path: requirements-test.txt
+    - name: Install controller and collection
+      run: |
+        python -m pip install -r requirements-test.txt
+        ansible-galaxy collection install -r requirements.yml
+        ansible-galaxy collection install -r requirements-dev.yml
+        ansible-galaxy collection build --force
+        artifact="$(python - <<'PYTHON'
+        import yaml
+        info = yaml.safe_load(open('galaxy.yml'))
+        print(f"{info['namespace']}-{info['name']}-{info['version']}.tar.gz")
+        PYTHON
+        )"
+        python tools/check_collection_artifact.py "$artifact"
+        ansible-galaxy collection install "$artifact" --force --no-deps
+    - name: Run baseline and verify idempotence
+      run: bash tests/run_container_integration_smoke.sh

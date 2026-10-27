@@ -1,0 +1,13 @@
+---
+- name: Configure the etcd quorum
+  hosts: database_ha
+  become: true
+  gather_facts: true
+  roles:
+  - role: degitag.database.etcd
+- name: Configure PostgreSQL high availability
+  hosts: database_ha
+  become: true
+  gather_facts: true
+  roles:
+  - role: degitag.database.patroni

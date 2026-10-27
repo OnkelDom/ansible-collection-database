@@ -1,0 +1,22 @@
+---
+- name: Label the configured service TCP port
+  community.general.seport:
+    ports: '{{ postgresql_port }}'
+    proto: tcp
+    setype: postgresql_port_t
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Label managed postgresql_db_t paths
+  community.general.sefcontext:
+    target: '{{ _postgresql_data_dir }}(/.*)?'
+    setype: postgresql_db_t
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Apply managed postgresql_db_t labels
+  ansible.builtin.command:
+    argv:
+    - restorecon
+    - -R
+    - '{{ _postgresql_data_dir }}'
+  changed_when: false
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'

@@ -1,0 +1,18 @@
+---
+- name: Reboot dedicated database validation hosts
+  hosts: baseline
+  become: true
+  gather_facts: false
+  tasks:
+  - name: Verify the explicit disposable test scope
+    ansible.builtin.assert:
+      that:
+      - database_test_disposable | default(false) | bool
+      fail_msg: This playbook requires explicit database_test_disposable=true on dedicated test hosts.
+  - name: Reboot the dedicated host and wait for SSH
+    ansible.builtin.reboot:
+      reboot_timeout: 180
+      connect_timeout: 5
+      post_reboot_delay: 5
+- name: Verify native database services after reboot
+  ansible.builtin.import_playbook: services.yml

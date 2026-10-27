@@ -1,0 +1,7 @@
+---
+_patroni_packages:
+- python3-venv
+- libpq5
+_patroni_venv: /opt/patroni
+_patroni_config: /etc/patroni/patroni.yml
+_patroni_service: patroni

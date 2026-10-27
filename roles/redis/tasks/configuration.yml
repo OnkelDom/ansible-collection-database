@@ -1,0 +1,92 @@
+---
+- name: Configure validate
+  ansible.builtin.import_tasks: validate.yml
+- name: Install native service packages on Debian family
+  ansible.builtin.apt:
+    name: '{{ redis_packages | default(_redis_packages, true) }}'
+    state: present
+    policy_rc_d: 101
+  when: ansible_facts['os_family'] == 'Debian'
+- name: Install native service packages on EL9
+  ansible.builtin.dnf:
+    name: '{{ redis_packages | default(_redis_packages, true) }}'
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+- name: Create Redis data directory
+  ansible.builtin.file:
+    path: '{{ redis_server_databases_dir }}'
+    state: directory
+    owner: '{{ _redis_user }}'
+    group: '{{ _redis_group }}'
+    mode: '0750'
+- name: Configure explicitly enabled Redis memory policy
+  ansible.posix.sysctl:
+    name: vm.overcommit_memory
+    value: '1'
+    sysctl_file: /etc/sysctl.d/90-degit-redis.conf
+    sysctl_set: true
+  when: redis_manage_sysctl
+- name: Inspect Sentinel before an explicit ownership handover
+  ansible.builtin.service_facts: {}
+  when: not redis_sentinel_enabled and _redis_sentinel_owned.stat.exists
+- name: Require an inactive externally managed Sentinel before handover
+  ansible.builtin.assert:
+    that:
+    - (redis_manage_service | bool) or ansible_facts.services.get(_redis_sentinel_service ~ '.service', {}).get('state', 'stopped') != 'running'
+  when: not redis_sentinel_enabled and _redis_sentinel_owned.stat.exists
+- name: Stop the owned Sentinel during an explicit handover
+  ansible.builtin.service:
+    name: '{{ _redis_sentinel_service }}'
+    state: stopped
+    enabled: false
+  when:
+  - not redis_sentinel_enabled
+  - _redis_sentinel_owned.stat.exists
+  - redis_manage_service | bool
+- name: Render Redis service configuration
+  ansible.builtin.template:
+    src: redis.conf.j2
+    dest: '{{ _redis_config }}'
+    owner: '{{ _redis_user }}'
+    group: '{{ _redis_group }}'
+    mode: '0640'
+  no_log: true
+  notify:
+  - Restart redis
+  when: not redis_sentinel_enabled or not _redis_sentinel_owned.stat.exists or (redis_sentinel_allow_reconfigure | bool)
+- name: Configure selinux
+  ansible.builtin.import_tasks: selinux.yml
+- name: Apply requested service state
+  ansible.builtin.service:
+    name: '{{ _redis_service }}'
+    enabled: '{{ redis_service_enabled }}'
+    state: '{{ redis_service_state }}'
+  when: redis_manage_service
+- name: Record Sentinel ownership of the Redis runtime configuration
+  ansible.builtin.copy:
+    content: 'Sentinel owns runtime primary and replica configuration.
+
+      '
+    dest: /etc/redis/.degit-sentinel-managed
+    owner: root
+    group: root
+    mode: '0644'
+    force: false
+  when: redis_sentinel_enabled
+- name: Configure sentinel
+  ansible.builtin.import_tasks: sentinel.yml
+  when: redis_sentinel_enabled
+- name: Delegate additive port rules to the host firewall
+  ansible.builtin.include_role:
+    name: degitag.infrastructure.firewall
+  vars:
+    firewall_rules: '{{ redis_firewall_sources | map(''community.general.dict_kv'', ''source'') | map(''combine'', {''port'': redis_server_port | string, ''proto'': ''tcp'', ''action'': ''allow''}) | list }}'
+  when: redis_manage_firewall
+- name: Release the owned Sentinel marker after explicit handover
+  ansible.builtin.file:
+    path: /etc/redis/.degit-sentinel-managed
+    state: absent
+  when:
+  - not redis_sentinel_enabled
+  - _redis_sentinel_owned.stat.exists
+  - redis_sentinel_allow_reconfigure | bool

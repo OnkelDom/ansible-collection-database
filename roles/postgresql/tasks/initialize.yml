@@ -1,26 +1,53 @@
 ---
-- name: Ensure PostgreSQL data directory exists.
-  ansible.builtin.file:
-    path: "{{ _postgresql_data_dir }}"
-    owner: "{{ postgresql_user }}"
-    group: "{{ postgresql_group }}"
-    state: directory
-    mode: "0700"
-
-- name: Check if PostgreSQL database is initialized.
+- name: Inspect PostgreSQL data version
   ansible.builtin.stat:
-    path: "{{ _postgresql_data_dir }}/PG_VERSION"
+    path: '{{ _postgresql_data_dir }}/PG_VERSION'
   register: _postgresql_pgdata_dir_version_res
-
-- name: Include initialization tasks for os family {{ ansible_os_family | lower }}
-  when:
-    - ansible_os_family | lower in ['debian', 'redhat']
-  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/initialize.yml"
-
-- name: Ensure PostgreSQL log directory exists.
+- name: Require explicit cluster initialization
+  ansible.builtin.assert:
+    that:
+    - _postgresql_pgdata_dir_version_res.stat.exists or (postgresql_initialize | bool)
+    fail_msg: Set postgresql_initialize=true for a new empty cluster. Existing data will never be deleted.
+- name: Create protected PostgreSQL data directory
   ansible.builtin.file:
-    path: "{{ postgresql_effective_log_dir }}"
-    owner: "{{ postgresql_user }}"
-    group: "{{ postgresql_group }}"
+    path: '{{ _postgresql_data_dir }}'
     state: directory
-    mode: "{{ postgresql_log_directory_mode }}"
+    owner: '{{ postgresql_user }}'
+    group: '{{ postgresql_group }}'
+    mode: '0700'
+- name: Initialize Debian standalone cluster
+  ansible.builtin.command:
+    argv:
+    - /usr/bin/pg_createcluster
+    - '{{ _postgresql_version }}'
+    - '{{ postgresql_cluster_name }}'
+    - --datadir
+    - '{{ _postgresql_data_dir }}'
+    - --
+    - --auth-local=peer
+    - --auth-host=scram-sha-256
+    creates: '{{ _postgresql_data_dir }}/PG_VERSION'
+  when: ansible_facts['os_family'] == 'Debian' and not _postgresql_pgdata_dir_version_res.stat.exists
+- name: Configure selinux
+  ansible.builtin.import_tasks: selinux.yml
+- name: Initialize EL standalone cluster
+  ansible.builtin.command:
+    argv:
+    - '{{ _postgresql_bin_path }}/initdb'
+    - -D
+    - '{{ _postgresql_data_dir }}'
+    - --auth-local=peer
+    - --auth-host=scram-sha-256
+    creates: '{{ _postgresql_data_dir }}/PG_VERSION'
+  become: true
+  become_user: '{{ postgresql_user }}'
+  when: ansible_facts['os_family'] == 'RedHat' and not _postgresql_pgdata_dir_version_res.stat.exists
+- name: Read PostgreSQL data version
+  ansible.builtin.slurp:
+    src: '{{ _postgresql_data_dir }}/PG_VERSION'
+  register: _postgresql_data_version
+- name: Reject implicit PostgreSQL major upgrades
+  ansible.builtin.assert:
+    that:
+    - (_postgresql_data_version.content | b64decode | trim) == _postgresql_version | string
+    fail_msg: Existing cluster major version differs from the selected packages. Plan an explicit upgrade.

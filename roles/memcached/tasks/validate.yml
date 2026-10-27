@@ -1,0 +1,16 @@
+---
+- name: Validate service and lifecycle inputs before changes
+  ansible.builtin.assert:
+    that:
+    - memcached_port | int >= 1
+    - memcached_port | int <= 65535
+    - memcached_service_state in ['started', 'stopped']
+    - not memcached_manage_firewall or memcached_firewall_sources | length > 0
+    - memcached_memory | int > 0
+    - memcached_maxconn | int > 0
+    - memcached_listen | length > 0
+    - memcached_listen | select('search', '[\r\n"`$]') | list | length == 0
+    - memcached_extra_options | select('search', '[\r\n"`$]') | list | length == 0
+    fail_msg: Invalid memcached inputs. Review the typed contract and docs/migration.md.
+    quiet: true
+  no_log: true

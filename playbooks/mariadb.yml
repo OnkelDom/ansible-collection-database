@@ -3,4 +3,5 @@
   hosts: all
   gather_facts: true
   roles:
-    - role: lenmail.database.mariadb
+  - role: degitag.database.mariadb
+  become: true

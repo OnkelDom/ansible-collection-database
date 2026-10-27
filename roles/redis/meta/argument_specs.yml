@@ -1,40 +1,158 @@
 ---
 argument_specs:
   main:
-    short_description: Install and configure Redis server and sentinel.
+    short_description: Entry point for the redis role.
+    description:
+    - Validate variables for the `redis` role.
     options:
-      redis_server_enabled:
-        type: bool
-        required: false
+      redis_master_ip:
         description:
-          - Whether the Redis server service should be configured.
+        - Master ip.
+        required: false
+        type: str
       redis_server_port:
+        description:
+        - Server port.
+        required: false
         type: int
-        required: false
+      redis_server_databases_number:
         description:
-          - TCP port for the Redis server.
-      redis_server_version:
-        type: raw
+        - Server databases number.
         required: false
+        type: int
+      redis_server_databases_dir:
         description:
-          - Redis package version to install.
+        - Server databases dir.
+        required: false
+        type: str
+      redis_conf_default:
+        description:
+        - Conf default.
+        required: false
+        type: dict
       redis_conf:
-        type: dict
-        required: false
         description:
-          - Extra Redis server configuration entries.
+        - Conf.
+        required: false
+        type: dict
       redis_sentinel_enabled:
+        description:
+        - Sentinel enabled.
+        required: false
         type: bool
-        required: false
+      redis_sentinel_listen:
         description:
-          - Whether Redis Sentinel should be configured.
+        - Sentinel listen.
+        required: false
+        type: str
       redis_sentinel_port:
+        description:
+        - Sentinel port.
+        required: false
         type: int
-        required: false
+      redis_sentinel_databases_dir:
         description:
-          - TCP port for Redis Sentinel.
+        - Sentinel databases dir.
+        required: false
+        type: str
+      redis_sentinel_quorum:
+        description:
+        - Sentinel quorum.
+        required: false
+        type: int
+      redis_sentinel_master_name:
+        description:
+        - Sentinel master name.
+        required: false
+        type: str
+      redis_sentinel_downafter:
+        description:
+        - Sentinel downafter.
+        required: false
+        type: int
+      redis_sentinel_failover_timeout:
+        description:
+        - Sentinel failover timeout.
+        required: false
+        type: int
       redis_sentinel_conf:
-        type: dict
-        required: false
         description:
-          - Extra Sentinel configuration entries.
+        - Sentinel conf.
+        required: false
+        type: dict
+      redis_sentinel_sentinel_conf:
+        description:
+        - Sentinel sentinel conf.
+        required: false
+        type: dict
+      redis_sentinel_master_conf:
+        description:
+        - Sentinel master conf.
+        required: false
+        type: dict
+      redis_manage_service:
+        description:
+        - Manage service.
+        required: false
+        type: bool
+      redis_service_enabled:
+        description:
+        - Service enabled.
+        required: false
+        type: bool
+      redis_service_state:
+        description:
+        - Service state.
+        required: false
+        type: str
+        choices:
+        - started
+        - stopped
+      redis_manage_firewall:
+        description:
+        - Manage firewall.
+        required: false
+        type: bool
+      redis_firewall_sources:
+        description:
+        - Firewall sources.
+        required: false
+        type: list
+        elements: str
+      redis_packages:
+        description:
+        - Packages.
+        required: false
+        type: list
+        elements: str
+      redis_server_password:
+        description:
+        - Redis authentication secret. Sentinel requires at least 20 URL-safe characters to survive native configuration rewrites.
+        required: false
+        type: str
+        no_log: true
+      redis_server_bind:
+        description:
+        - Server bind.
+        required: false
+        type: list
+        elements: str
+      redis_manage_sysctl:
+        description:
+        - Manage sysctl.
+        required: false
+        type: bool
+      redis_role:
+        description:
+        - Role.
+        required: false
+        type: str
+        choices:
+        - standalone
+        - primary
+        - replica
+      redis_sentinel_allow_reconfigure:
+        description:
+        - Explicitly replace Sentinel-managed Redis configuration during a reviewed maintenance window.
+        required: false
+        type: bool

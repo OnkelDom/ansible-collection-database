@@ -1,0 +1,28 @@
+---
+- name: Validate service and lifecycle inputs before changes
+  ansible.builtin.assert:
+    that:
+    - redis_server_port | int >= 1
+    - redis_server_port | int <= 65535
+    - redis_service_state in ['started', 'stopped']
+    - not redis_manage_firewall or redis_firewall_sources | length > 0
+    - redis_server_bind | length > 0
+    - redis_role in ['standalone', 'primary', 'replica']
+    - redis_role != 'replica' or redis_master_ip | length > 0
+    - not redis_sentinel_enabled or (redis_master_ip | length > 0 and redis_sentinel_quorum | int >= 1)
+    - redis_server_password | length == 0 or redis_server_password is not search("[\r\n]")
+    - redis_server_bind | select('search', '[\r\n]') | list | length == 0
+    - redis_conf | dict2items | selectattr('key', 'search', '[\r\n]') | list | length == 0
+    - not redis_sentinel_enabled or redis_server_password is match('^[A-Za-z0-9_-]{20,}$')
+    - redis_server_bind | difference(['127.0.0.1', '::1', 'localhost']) | length == 0 or redis_server_password | length >= 12
+    fail_msg: Remote Redis listeners require authentication. Sentinel needs a URL-safe password of at least 20 characters because native CONFIG REWRITE does not preserve quoted auth-pass values.
+    quiet: true
+- name: Inspect existing Sentinel ownership
+  ansible.builtin.stat:
+    path: /etc/redis/.degit-sentinel-managed
+  register: _redis_sentinel_owned
+- name: Reject implicit removal of Sentinel ownership
+  ansible.builtin.assert:
+    that:
+    - redis_sentinel_enabled or not _redis_sentinel_owned.stat.exists or (redis_sentinel_allow_reconfigure | bool)
+    fail_msg: Sentinel already owns this instance. Plan a cluster-wide handover and explicitly allow reconfiguration before disabling it.

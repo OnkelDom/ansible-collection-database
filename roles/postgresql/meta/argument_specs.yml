@@ -1,85 +1,1384 @@
 ---
 argument_specs:
   main:
-    short_description: Install and configure PostgreSQL.
+    short_description: Entry point for the postgresql role.
+    description:
+    - Validate variables for the `postgresql` role.
     options:
       postgresql_version:
-        type: int
-        required: false
         description:
-          - PostgreSQL major version to install.
+        - Version.
+        required: false
+        type: str
+      postgresql_debug:
+        description:
+        - Debug.
+        required: false
+        type: bool
+      postgresql_locales:
+        description:
+        - Locales.
+        required: false
+        type: list
+        elements: str
       postgresql_port:
+        description:
+        - Port.
+        required: false
         type: int
-        required: false
-        description:
-          - TCP port for PostgreSQL.
       postgresql_listen_addresses:
+        description:
+        - Listen addresses.
+        required: false
         type: str
-        required: false
+      postgresql_max_connections:
         description:
-          - Listen addresses written into postgresql.conf.
-      postgresql_service_enabled:
-        type: bool
+        - Max connections.
         required: false
+        type: int
+      postgresql_shared_preload_libraries:
         description:
-          - Whether the PostgreSQL service is enabled on boot.
-      postgresql_backup:
-        type: bool
+        - Shared preload libraries.
         required: false
+        type: list
+        elements: str
+      postgresql_auth_method:
         description:
-          - Whether PostgreSQL backup management is enabled.
-      postgresql_backup_implementation:
+        - Auth method.
+        required: false
         type: str
+      postgresql_unix_socket_directories:
+        description:
+        - Unix socket directories.
         required: false
+        type: list
+        elements: str
+      postgresql_unix_socket_directories_mode:
+        description:
+        - Unix socket directories mode.
+        required: false
+        type: str
+      postgresql_global_config_options:
+        description:
+        - Global config options.
+        required: false
+        type: list
+        elements: dict
+        options:
+          option:
+            type: str
+            description:
+            - Option.
+            required: true
+          value:
+            type: str
+            description:
+            - Value.
+            required: true
+          state:
+            type: str
+            description:
+            - State.
+      postgresql_global_config_options_extra:
+        description:
+        - Global config options extra.
+        required: false
+        type: list
+        elements: dict
+        options:
+          option:
+            type: str
+            description:
+            - Option.
+            required: true
+          value:
+            type: str
+            description:
+            - Value.
+            required: true
+          state:
+            type: str
+            description:
+            - State.
+      postgresql_log_dir:
+        description:
+        - Log dir.
+        required: false
+        type: str
+      postgresql_effective_log_dir:
+        description:
+        - Effective log dir.
+        required: false
+        type: str
+      postgresql_persist_permissions:
+        description:
+        - Persist permissions.
+        required: false
+        type: bool
+      postgresql_tempfile_src_template_path:
+        description:
+        - Tempfile src template path.
+        required: false
+        type: str
+      postgresql_tempfile_dest_path:
+        description:
+        - Tempfile dest path.
+        required: false
+        type: str
+      postgresql_tempfile_mode:
+        description:
+        - Tempfile mode.
+        required: false
+        type: str
+      postgresql_tempfile_owner:
+        description:
+        - Tempfile owner.
+        required: false
+        type: str
+      postgresql_tempfile_group:
+        description:
+        - Tempfile group.
+        required: false
+        type: str
+      postgresql_hba_entries:
+        description:
+        - Hba entries.
+        required: false
+        type: list
+        elements: dict
+        options:
+          contype:
+            type: str
+            description:
+            - Contype.
+            required: true
+          databases:
+            type: str
+            description:
+            - Databases.
+            required: true
+          users:
+            type: str
+            description:
+            - Users.
+            required: true
+          address:
+            type: str
+            description:
+            - Address.
+          ip_address:
+            type: str
+            description:
+            - Ip address.
+          ip_mask:
+            type: str
+            description:
+            - Ip mask.
+          method:
+            type: str
+            description:
+            - Method.
+            required: true
+          auth_options:
+            type: str
+            description:
+            - Auth options.
+      postgresql_hba_entries_extra:
+        description:
+        - Hba entries extra.
+        required: false
+        type: list
+        elements: dict
+        options:
+          contype:
+            type: str
+            description:
+            - Contype.
+            required: true
+          databases:
+            type: str
+            description:
+            - Databases.
+            required: true
+          users:
+            type: str
+            description:
+            - Users.
+            required: true
+          address:
+            type: str
+            description:
+            - Address.
+          ip_address:
+            type: str
+            description:
+            - Ip address.
+          ip_mask:
+            type: str
+            description:
+            - Ip mask.
+          method:
+            type: str
+            description:
+            - Method.
+            required: true
+          auth_options:
+            type: str
+            description:
+            - Auth options.
+      postgresql_hba_template_path:
+        description:
+        - Hba template path.
+        required: false
+        type: str
+      postgresql_hba_use_raw:
+        description:
+        - Hba use raw.
+        required: false
+        type: bool
+      postgresql_hba_raw:
+        description:
+        - Hba raw.
+        required: false
+        type: str
+      postgresql_cluster_name:
+        description:
+        - Cluster name.
+        required: false
+        type: str
+      postgresql_user:
+        description:
+        - User.
+        required: false
+        type: str
+      postgresql_group:
+        description:
+        - Group.
+        required: false
+        type: str
+      postgresql_service_state:
+        description:
+        - Service state.
+        required: false
+        type: str
         choices:
-          - legacy
-          - custom_encrypted
+        - started
+        - stopped
+      postgresql_service_enabled:
         description:
-          - Backup implementation to deploy.
-      postgresql_backup_encryption_passphrase:
-        type: str
+        - Service enabled.
         required: false
-        description:
-          - Vault-backed passphrase for encrypted custom-format backups.
-      postgresql_backup_dbnames:
-        type: str
-        required: false
-        description:
-          - Space-separated list of databases to back up.
-      postgresql_backup_metrics_file:
-        type: str
-        required: false
-        description:
-          - Optional Prometheus textfile collector output path.
-      postgresql_backup_metrics_directory_owner:
-        type: str
-        required: false
-        description:
-          - Owner of the Prometheus textfile collector directory.
-      postgresql_backup_metrics_directory_group:
-        type: str
-        required: false
-        description:
-          - Group of the Prometheus textfile collector directory.
-      postgresql_backup_metrics_directory_mode:
-        type: str
-        required: false
-        description:
-          - Mode of the Prometheus textfile collector directory.
-      postgresql_users:
-        type: list
-        elements: dict
-        required: false
-        description:
-          - PostgreSQL roles and users to manage.
-      postgresql_databases:
-        type: list
-        elements: dict
-        required: false
-        description:
-          - PostgreSQL databases to manage.
-      postgresql_replication:
         type: bool
-        required: false
+      postgresql_tablespaces:
         description:
-          - Enables replication-related tasks.
+        - Tablespaces.
+        required: false
+        type: list
+        elements: dict
+        options:
+          location_mode:
+            type: str
+            description:
+            - Location mode.
+          location_create:
+            type: bool
+            description:
+            - Location create.
+          state:
+            type: str
+            description:
+            - State.
+            choices:
+            - present
+            - absent
+          location_owner:
+            type: str
+            description:
+            - Location owner.
+          location_group:
+            type: str
+            description:
+            - Location group.
+          location:
+            type: str
+            description:
+            - Location.
+          owner:
+            type: str
+            description:
+            - Owner.
+          session_role:
+            type: str
+            description:
+            - Session role.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          name:
+            type: str
+            description:
+            - Name.
+            required: true
+          set:
+            type: dict
+            description:
+            - Set.
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          rename_to:
+            type: str
+            description:
+            - Rename to.
+          login_user:
+            type: str
+            description:
+            - Login user.
+      postgresql_users:
+        description:
+        - Users.
+        required: false
+        type: list
+        elements: dict
+        options:
+          no_password_changes:
+            type: bool
+            description:
+            - No password changes.
+          encrypted:
+            type: bool
+            description:
+            - Encrypted.
+          comment:
+            type: str
+            description:
+            - Comment.
+          expires:
+            type: str
+            description:
+            - Expires.
+          conn_limit:
+            type: int
+            description:
+            - Conn limit.
+          session_role:
+            type: str
+            description:
+            - Session role.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          name:
+            type: str
+            description:
+            - Name.
+            required: true
+          db:
+            type: str
+            description:
+            - Db.
+          state:
+            type: str
+            description:
+            - State.
+            choices:
+            - present
+            - absent
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          password:
+            type: str
+            description:
+            - Password.
+            no_log: true
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          fail_on_user:
+            type: bool
+            description:
+            - Fail on user.
+          role_attr_flags:
+            type: str
+            description:
+            - Role attr flags.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          login_user:
+            type: str
+            description:
+            - Login user.
+      postgres_users_no_log:
+        description:
+        - Postgres users no log.
+        required: false
+        type: bool
+      postgresql_memberships:
+        description:
+        - Memberships.
+        required: false
+        type: list
+        elements: dict
+        options:
+          target_roles:
+            type: list
+            description:
+            - Target roles.
+            elements: str
+          session_role:
+            type: str
+            description:
+            - Session role.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          db:
+            type: str
+            description:
+            - Db.
+          state:
+            type: str
+            description:
+            - State.
+            choices:
+            - present
+            - absent
+          groups:
+            type: list
+            description:
+            - Groups.
+            elements: str
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          fail_on_user:
+            type: bool
+            description:
+            - Fail on user.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          login_user:
+            type: str
+            description:
+            - Login user.
+      postgresql_databases:
+        description:
+        - Databases.
+        required: false
+        type: list
+        elements: dict
+        options:
+          force:
+            type: bool
+            description:
+            - Force.
+          conn_limit:
+            type: int
+            description:
+            - Conn limit.
+          name:
+            type: str
+            description:
+            - Name.
+            required: true
+          login_password:
+            type: str
+            description:
+            - Login password.
+            no_log: true
+          state:
+            type: str
+            description:
+            - State.
+            choices:
+            - present
+            - absent
+            - dump
+            - restore
+            - rename
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          encoding:
+            type: str
+            description:
+            - Encoding.
+          target_opts:
+            type: str
+            description:
+            - Target opts.
+          maintenance_db:
+            type: str
+            description:
+            - Maintenance db.
+          target:
+            type: str
+            description:
+            - Target.
+          login_host:
+            type: str
+            description:
+            - Login host.
+          session_role:
+            type: str
+            description:
+            - Session role.
+          template:
+            type: str
+            description:
+            - Template.
+          lc_collate:
+            type: str
+            description:
+            - Lc collate.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          lc_ctype:
+            type: str
+            description:
+            - Lc ctype.
+          login_user:
+            type: str
+            description:
+            - Login user.
+          tablespace:
+            type: str
+            description:
+            - Tablespace.
+          owner:
+            type: str
+            description:
+            - Owner.
+          dump_extra_args:
+            type: str
+            description:
+            - Dump extra args.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+      postgresql_schemas:
+        description:
+        - Schemas.
+        required: false
+        type: list
+        elements: dict
+        options:
+          owner:
+            type: str
+            description:
+            - Owner.
+          cascade_drop:
+            type: bool
+            description:
+            - Cascade drop.
+          session_role:
+            type: str
+            description:
+            - Session role.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          name:
+            type: str
+            description:
+            - Name.
+            required: true
+          db:
+            type: str
+            description:
+            - Db.
+          state:
+            type: str
+            description:
+            - State.
+            choices:
+            - present
+            - absent
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          login_user:
+            type: str
+            description:
+            - Login user.
+      postgresql_tables:
+        description:
+        - Tables.
+        required: false
+        type: list
+        elements: dict
+        options:
+          name:
+            type: str
+            description:
+            - Name.
+            required: true
+          state:
+            type: str
+            description:
+            - State.
+            choices:
+            - present
+            - absent
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          unlogged:
+            type: bool
+            description:
+            - Unlogged.
+          columns:
+            type: list
+            description:
+            - Columns.
+            elements: str
+          db:
+            type: str
+            description:
+            - Db.
+          session_role:
+            type: str
+            description:
+            - Session role.
+          rename:
+            type: str
+            description:
+            - Rename.
+          truncate:
+            type: bool
+            description:
+            - Truncate.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          login_user:
+            type: str
+            description:
+            - Login user.
+          tablespace:
+            type: str
+            description:
+            - Tablespace.
+          owner:
+            type: str
+            description:
+            - Owner.
+          storage_params:
+            type: str
+            description:
+            - Storage params.
+          like:
+            type: str
+            description:
+            - Like.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          including:
+            type: str
+            description:
+            - Including.
+          cascade:
+            type: bool
+            description:
+            - Cascade.
+      postgresql_ownerships:
+        description:
+        - Ownerships.
+        required: false
+        type: list
+        elements: dict
+        options:
+          obj_type:
+            type: str
+            description:
+            - Obj type.
+          reassign_owned_by:
+            type: list
+            description:
+            - Reassign owned by.
+            elements: str
+          new_owner:
+            type: str
+            description:
+            - New owner.
+          session_role:
+            type: str
+            description:
+            - Session role.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          db:
+            type: str
+            description:
+            - Db.
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          obj_name:
+            type: str
+            description:
+            - Obj name.
+          fail_on_role:
+            type: str
+            description:
+            - Fail on role.
+          login_user:
+            type: str
+            description:
+            - Login user.
+      postgresql_privs:
+        description:
+        - Privs.
+        required: false
+        type: list
+        elements: dict
+        options:
+          roles:
+            type: str
+            description:
+            - Roles.
+          objs:
+            type: str
+            description:
+            - Objs.
+          target_roles:
+            type: list
+            description:
+            - Target roles.
+            elements: str
+          session_role:
+            type: str
+            description:
+            - Session role.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          db:
+            type: str
+            description:
+            - Db.
+          state:
+            type: str
+            description:
+            - State.
+            choices:
+            - present
+            - absent
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          type:
+            type: str
+            description:
+            - Type.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          schema:
+            type: str
+            description:
+            - Schema.
+          grant_option:
+            type: bool
+            description:
+            - Grant option.
+          fail_on_user:
+            type: bool
+            description:
+            - Fail on user.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          privs:
+            type: str
+            description:
+            - Privs.
+          login_user:
+            type: str
+            description:
+            - Login user.
+      postgresql_extensions:
+        description:
+        - Extensions.
+        required: false
+        type: list
+        elements: dict
+        options:
+          login_host:
+            type: str
+            description:
+            - Login host.
+          session_role:
+            type: str
+            description:
+            - Session role.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          name:
+            type: str
+            description:
+            - Name.
+            required: true
+          db:
+            type: str
+            description:
+            - Db.
+          state:
+            type: str
+            description:
+            - State.
+            choices:
+            - present
+            - absent
+          login_password:
+            type: str
+            description:
+            - Login password.
+            no_log: true
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          schema:
+            type: str
+            description:
+            - Schema.
+          cascade:
+            type: bool
+            description:
+            - Cascade.
+          version:
+            type: str
+            description:
+            - Version.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          login_user:
+            type: str
+            description:
+            - Login user.
+      postgresql_queries:
+        description:
+        - Queries.
+        required: false
+        type: list
+        elements: dict
+        options:
+          positional_args:
+            type: list
+            description:
+            - Positional args.
+            elements: str
+          autocommit:
+            type: bool
+            description:
+            - Autocommit.
+          named_args:
+            type: dict
+            description:
+            - Named args.
+          query:
+            type: str
+            description:
+            - Query.
+          session_role:
+            type: str
+            description:
+            - Session role.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          db:
+            type: str
+            description:
+            - Db.
+          search_path:
+            type: list
+            description:
+            - Search path.
+            elements: str
+          changed_when:
+            type: str
+            description:
+            - Changed when.
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          encoding:
+            type: str
+            description:
+            - Encoding.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          login_user:
+            type: str
+            description:
+            - Login user.
+      postgresql_scripts:
+        description:
+        - Scripts.
+        required: false
+        type: list
+        elements: dict
+        options:
+          positional_args:
+            type: list
+            description:
+            - Positional args.
+            elements: str
+          named_args:
+            type: dict
+            description:
+            - Named args.
+          session_role:
+            type: str
+            description:
+            - Session role.
+          login_unix_socket:
+            type: str
+            description:
+            - Login unix socket.
+          db:
+            type: str
+            description:
+            - Db.
+          search_path:
+            type: list
+            description:
+            - Search path.
+            elements: str
+          path:
+            type: str
+            description:
+            - Path.
+          ssl_mode:
+            type: str
+            description:
+            - Ssl mode.
+          trust_input:
+            type: bool
+            description:
+            - Trust input.
+          encoding:
+            type: str
+            description:
+            - Encoding.
+          ca_cert:
+            type: str
+            description:
+            - Ca cert.
+          login_user:
+            type: str
+            description:
+            - Login user.
+      postgresql_autotune:
+        description:
+        - Autotune.
+        required: false
+        type: bool
+      postgresql_autotune_config_options:
+        description:
+        - Autotune config options.
+        required: false
+        type: list
+        elements: dict
+        options:
+          option:
+            type: str
+            description:
+            - Option.
+            required: true
+          value:
+            type: str
+            description:
+            - Value.
+            required: true
+          state:
+            type: str
+            description:
+            - State.
+      postgresql_autotune_os_type:
+        description:
+        - Autotune os type.
+        required: false
+        type: str
+      postgresql_autotune_arch:
+        description:
+        - Autotune arch.
+        required: false
+        type: str
+      postgresql_autotune_drive_type:
+        description:
+        - Autotune drive type.
+        required: false
+        type: str
+      postgresql_autotune_env_name:
+        description:
+        - Autotune env name.
+        required: false
+        type: str
+      postgresql_autotune_include_badger:
+        description:
+        - Autotune include badger.
+        required: false
+        type: bool
+      postgresql_autotune_cpus:
+        description:
+        - Autotune cpus.
+        required: false
+        type: str
+      postgresql_autotune_total_ram:
+        description:
+        - Autotune total ram.
+        required: false
+        type: str
+      postgresql_autotune_pg_version:
+        description:
+        - Autotune pg version.
+        required: false
+        type: str
+      postgresql_autotune_base_url:
+        description:
+        - Autotune base url.
+        required: false
+        type: str
+      postgresql_autotune_url:
+        description:
+        - Autotune url.
+        required: false
+        type: str
+      postgresql_backup:
+        description:
+        - Backup.
+        required: false
+        type: bool
+      postgresql_backup_root_dir:
+        description:
+        - Backup root dir.
+        required: false
+        type: str
+      postgresql_backup_script_dest:
+        description:
+        - Backup script dest.
+        required: false
+        type: str
+      postgresql_backup_create_database:
+        description:
+        - Backup create database.
+        required: false
+        type: str
+      postgresql_backup_dbnames:
+        description:
+        - Backup dbnames.
+        required: false
+        type: str
+      postgresql_backup_dbexclude:
+        description:
+        - Backup dbexclude.
+        required: false
+        type: str
+      postgresql_backup_cron_job_name:
+        description:
+        - Backup cron job name.
+        required: false
+        type: str
+      postgresql_backup_schedule:
+        description:
+        - Backup schedule.
+        required: false
+        type: dict
+      postgresql_backup_mail_addr:
+        description:
+        - Backup mail addr.
+        required: false
+        type: str
+      postgresql_backup_doweekly:
+        description:
+        - Backup doweekly.
+        required: false
+        type: int
+      postgresql_backup_domonthly:
+        description:
+        - Backup domonthly.
+        required: false
+        type: int
+      postgresql_backup_brdaily:
+        description:
+        - Backup brdaily.
+        required: false
+        type: int
+      postgresql_backup_brweekly:
+        description:
+        - Backup brweekly.
+        required: false
+        type: int
+      postgresql_backup_brmontly:
+        description:
+        - Backup brmontly.
+        required: false
+        type: int
+      postgresql_backup_perm:
+        description:
+        - Backup perm.
+        required: false
+        type: str
+      postgresql_backup_implementation:
+        description:
+        - Backup implementation.
+        required: false
+        type: str
+        choices:
+        - legacy
+        - custom_encrypted
+      postgresql_backup_encryption_passphrase:
+        description:
+        - Backup encryption passphrase.
+        required: false
+        type: str
+        no_log: true
+      postgresql_backup_passphrase_file:
+        description:
+        - Backup passphrase file.
+        required: false
+        type: str
+      postgresql_backup_daily_retention:
+        description:
+        - Backup daily retention.
+        required: false
+        type: int
+      postgresql_backup_weekly_retention:
+        description:
+        - Backup weekly retention.
+        required: false
+        type: int
+      postgresql_backup_systemd_calendar:
+        description:
+        - Backup systemd calendar.
+        required: false
+        type: str
+      postgresql_backup_restore_test_calendar:
+        description:
+        - Backup restore test calendar.
+        required: false
+        type: str
+      postgresql_backup_restore_test_database:
+        description:
+        - Backup restore test database.
+        required: false
+        type: str
+      postgresql_backup_metrics_file:
+        description:
+        - Backup metrics file.
+        required: false
+        type: str
+      postgresql_backup_metrics_directory_owner:
+        description:
+        - Backup metrics directory owner.
+        required: false
+        type: str
+      postgresql_backup_metrics_directory_group:
+        description:
+        - Backup metrics directory group.
+        required: false
+        type: str
+      postgresql_backup_metrics_directory_mode:
+        description:
+        - Backup metrics directory mode.
+        required: false
+        type: str
+      postgresql_backup_custom_script_dest:
+        description:
+        - Backup custom script dest.
+        required: false
+        type: str
+      postgresql_http_general_proxy:
+        description:
+        - Http general proxy.
+        required: false
+        type: str
+      postgresql_https_general_proxy:
+        description:
+        - Https general proxy.
+        required: false
+        type: str
+      postgresql_http_pkg_proxy:
+        description:
+        - Http pkg proxy.
+        required: false
+        type: str
+      postgresql_https_pkg_proxy:
+        description:
+        - Https pkg proxy.
+        required: false
+        type: str
+      postgresql_manage_service:
+        description:
+        - Manage service.
+        required: false
+        type: bool
+      postgresql_manage_firewall:
+        description:
+        - Manage firewall.
+        required: false
+        type: bool
+      postgresql_firewall_sources:
+        description:
+        - Firewall sources.
+        required: false
+        type: list
+        elements: str
+      postgresql_packages:
+        description:
+        - Packages.
+        required: false
+        type: list
+        elements: str
+      postgresql_initialize:
+        description:
+        - Initialize.
+        required: false
+        type: bool
+      postgresql_manage_objects:
+        description:
+        - Manage objects.
+        required: false
+        type: bool
+      postgresql_manage_backup_timers:
+        description:
+        - Manage backup timers.
+        required: false
+        type: bool
+      postgresql_backup_restore_test_enabled:
+        description:
+        - Backup restore test enabled.
+        required: false
+        type: bool
+      postgresql_data_dir:
+        description:
+        - Data dir.
+        required: false
+        type: str
+      postgresql_config_path:
+        description:
+        - Config path.
+        required: false
+        type: str
+      postgresql_bin_path:
+        description:
+        - Bin path.
+        required: false
+        type: str
+      postgresql_daemon:
+        description:
+        - Daemon.
+        required: false
+        type: str
+      postgresql_service_path:
+        description:
+        - Service path.
+        required: false
+        type: str
+      postgresql_deployment_mode:
+        description:
+        - Deployment mode.
+        required: false
+        type: str
+        choices:
+        - standalone
+        - patroni
+      postgresql_backup_primary_only:
+        description:
+        - Skip scheduled backup and restore work on HA replicas.
+        required: false
+        type: bool
+      postgresql_allow_data_migration:
+        description:
+        - Allow explicitly declared database import, restore, export or rename operations.
+        required: false
+        type: bool
+      postgresql_manage_backup_schedule:
+        description:
+        - Explicitly enable the configured cron backup schedule.
+        required: false
+        type: bool

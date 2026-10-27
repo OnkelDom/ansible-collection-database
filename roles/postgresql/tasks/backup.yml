@@ -1,114 +1,121 @@
 ---
+- name: Validate explicit backup and restore scope
+  ansible.builtin.assert:
+    that:
+    - postgresql_backup_implementation in ['legacy', 'custom_encrypted']
+    - postgresql_backup_restore_test_database is match('^[a-z][a-z0-9_]{0,39}$')
+    - postgresql_backup_root_dir is match('^/[A-Za-z0-9_/-]+$')
+    fail_msg: Backup scope must use safe absolute paths and a reserved restore-test prefix.
+- name: Install backup scheduling prerequisites
+  ansible.builtin.package:
+    name: '{{ (ansible_facts[''os_family''] == ''Debian'') | ternary([''cron'', ''gnupg''], [''cronie'', ''gnupg2'']) }}'
+    state: present
 - name: Create PostgreSQL backup directory
   ansible.builtin.file:
-    path: "{{ postgresql_backup_root_dir }}"
+    path: '{{ postgresql_backup_root_dir }}'
     state: directory
-    owner: "{{ postgresql_user }}"
-    group: "{{ postgresql_group }}"
-    mode: "0750"
-
+    owner: '{{ postgresql_user }}'
+    group: '{{ postgresql_group }}'
+    mode: '0750'
 - name: Configure legacy PostgreSQL backup
   when: postgresql_backup_implementation == "legacy"
   block:
-    - name: Install legacy PostgreSQL backup script
-      ansible.builtin.template:
-        src: autopostgresqlbackup.sh.j2
-        dest: "{{ postgresql_backup_script_dest }}"
-        owner: "{{ postgresql_user }}"
-        group: "{{ postgresql_group }}"
-        mode: "0750"
-
-    - name: Schedule legacy PostgreSQL backup
-      ansible.builtin.cron:
-        name: "{{ postgresql_backup_cron_job_name }}"
-        hour: "{{ postgresql_backup_schedule.hour | default(omit) }}"
-        minute: "{{ postgresql_backup_schedule.minute | default(omit) }}"
-        day: "{{ postgresql_backup_schedule.day | default(omit) }}"
-        weekday: "{{ postgresql_backup_schedule.weekday | default(omit) }}"
-        month: "{{ postgresql_backup_schedule.month | default(omit) }}"
-        user: "{{ postgresql_user }}"
-        job: "/bin/bash {{ postgresql_backup_script_dest }}"
-
+  - name: Install legacy PostgreSQL backup script
+    ansible.builtin.template:
+      src: autopostgresqlbackup.sh.j2
+      dest: '{{ postgresql_backup_script_dest }}'
+      owner: '{{ postgresql_user }}'
+      group: '{{ postgresql_group }}'
+      mode: '0750'
+      validate: bash -n %s
+  - name: Schedule legacy PostgreSQL backup
+    ansible.builtin.cron:
+      name: '{{ postgresql_backup_cron_job_name }}'
+      hour: '{{ postgresql_backup_schedule.hour | default(omit) }}'
+      minute: '{{ postgresql_backup_schedule.minute | default(omit) }}'
+      day: '{{ postgresql_backup_schedule.day | default(omit) }}'
+      weekday: '{{ postgresql_backup_schedule.weekday | default(omit) }}'
+      month: '{{ postgresql_backup_schedule.month | default(omit) }}'
+      user: '{{ postgresql_user }}'
+      job: /bin/bash {{ postgresql_backup_script_dest }}
+    when: postgresql_manage_backup_schedule
 - name: Configure encrypted custom-format PostgreSQL backup
   when: postgresql_backup_implementation == "custom_encrypted"
   block:
-    - name: Validate encrypted PostgreSQL backup settings
-      ansible.builtin.assert:
-        that:
-          - postgresql_backup_encryption_passphrase | length >= 20
-          - postgresql_backup_dbnames != "all"
-          - postgresql_backup_daily_retention | int >= 1
-          - postgresql_backup_weekly_retention | int >= 1
-        fail_msg: >-
-          custom_encrypted backups require an explicit database list, a passphrase
-          of at least 20 characters and positive daily/weekly retention values.
-      no_log: true
+  - name: Validate encrypted PostgreSQL backup settings
+    ansible.builtin.assert:
+      that:
+      - postgresql_backup_encryption_passphrase | length >= 20
+      - postgresql_backup_dbnames != "all"
+      - postgresql_backup_daily_retention | int >= 1
+      - postgresql_backup_weekly_retention | int >= 1
+      - postgresql_backup_restore_test_database not in postgresql_backup_dbnames.split()
+      fail_msg: custom_encrypted backups require an explicit database list, a passphrase of at least 20 characters and positive daily/weekly retention values.
+    no_log: true
+  - name: Install PostgreSQL backup passphrase
+    ansible.builtin.copy:
+      content: '{{ postgresql_backup_encryption_passphrase }}
 
-    - name: Install PostgreSQL backup passphrase
-      ansible.builtin.copy:
-        content: "{{ postgresql_backup_encryption_passphrase }}\n"
-        dest: "{{ postgresql_backup_passphrase_file }}"
-        owner: "{{ postgresql_user }}"
-        group: "{{ postgresql_group }}"
-        mode: "0400"
-      no_log: true
-
-    - name: Create PostgreSQL backup metrics directory
-      ansible.builtin.file:
-        path: "{{ postgresql_backup_metrics_file | dirname }}"
-        state: directory
-        owner: "{{ postgresql_backup_metrics_directory_owner }}"
-        group: "{{ postgresql_backup_metrics_directory_group }}"
-        mode: "{{ postgresql_backup_metrics_directory_mode }}"
-      when: postgresql_backup_metrics_file | length > 0
-
-    - name: Initialize PostgreSQL backup metrics file
-      ansible.builtin.file:
-        path: "{{ postgresql_backup_metrics_file }}"
-        state: touch
-        owner: "{{ postgresql_user }}"
-        group: "{{ postgresql_group }}"
-        mode: "0644"
-        modification_time: preserve
-        access_time: preserve
-      when: postgresql_backup_metrics_file | length > 0
-
-    - name: Install encrypted PostgreSQL backup script
-      ansible.builtin.template:
-        src: postgresql-custom-backup.sh.j2
-        dest: "{{ postgresql_backup_custom_script_dest }}"
-        owner: root
-        group: "{{ postgresql_group }}"
-        mode: "0750"
-
-    - name: Install PostgreSQL backup systemd units
-      ansible.builtin.template:
-        src: "{{ item.src }}"
-        dest: "/etc/systemd/system/{{ item.dest }}"
-        owner: root
-        group: root
-        mode: "0644"
-      loop:
-        - {src: postgresql-backup.service.j2, dest: postgresql-backup.service}
-        - {src: postgresql-backup.timer.j2, dest: postgresql-backup.timer}
-        - {src: postgresql-restore-test.service.j2, dest: postgresql-restore-test.service}
-        - {src: postgresql-restore-test.timer.j2, dest: postgresql-restore-test.timer}
-
-    - name: Validate PostgreSQL backup systemd units
-      ansible.builtin.command: >-
-        systemd-analyze verify
-        /etc/systemd/system/postgresql-backup.service
-        /etc/systemd/system/postgresql-backup.timer
-        /etc/systemd/system/postgresql-restore-test.service
-        /etc/systemd/system/postgresql-restore-test.timer
-      changed_when: false
-
-    - name: Enable PostgreSQL backup timers
-      ansible.builtin.systemd_service:
-        name: "{{ item }}"
-        enabled: true
-        state: started
-        daemon_reload: true
-      loop:
-        - postgresql-backup.timer
-        - postgresql-restore-test.timer
+        '
+      dest: '{{ postgresql_backup_passphrase_file }}'
+      owner: '{{ postgresql_user }}'
+      group: '{{ postgresql_group }}'
+      mode: '0400'
+    no_log: true
+  - name: Create PostgreSQL backup metrics directory
+    ansible.builtin.file:
+      path: '{{ postgresql_backup_metrics_file | dirname }}'
+      state: directory
+      owner: '{{ postgresql_backup_metrics_directory_owner }}'
+      group: '{{ postgresql_backup_metrics_directory_group }}'
+      mode: '{{ postgresql_backup_metrics_directory_mode }}'
+    when: postgresql_backup_metrics_file | length > 0
+  - name: Initialize PostgreSQL backup metrics file
+    ansible.builtin.file:
+      path: '{{ postgresql_backup_metrics_file }}'
+      state: touch
+      owner: '{{ postgresql_user }}'
+      group: '{{ postgresql_group }}'
+      mode: '0644'
+      modification_time: preserve
+      access_time: preserve
+    when: postgresql_backup_metrics_file | length > 0
+  - name: Install encrypted PostgreSQL backup script
+    ansible.builtin.template:
+      src: postgresql-custom-backup.sh.j2
+      dest: '{{ postgresql_backup_custom_script_dest }}'
+      owner: root
+      group: '{{ postgresql_group }}'
+      mode: '0750'
+      validate: bash -n %s
+  - name: Install PostgreSQL backup systemd units
+    ansible.builtin.template:
+      src: '{{ item.src }}'
+      dest: /etc/systemd/system/{{ item.dest }}
+      owner: root
+      group: root
+      mode: '0644'
+    loop:
+    - src: postgresql-backup.service.j2
+      dest: postgresql-backup.service
+    - src: postgresql-backup.timer.j2
+      dest: postgresql-backup.timer
+    - src: postgresql-restore-test.service.j2
+      dest: postgresql-restore-test.service
+    - src: postgresql-restore-test.timer.j2
+      dest: postgresql-restore-test.timer
+  - name: Reload managed backup units without starting database services
+    ansible.builtin.systemd_service:
+      daemon_reload: true
+    when: postgresql_manage_service | bool
+  - name: Validate PostgreSQL backup systemd units
+    ansible.builtin.command: systemd-analyze verify /etc/systemd/system/postgresql-backup.service /etc/systemd/system/postgresql-backup.timer /etc/systemd/system/postgresql-restore-test.service /etc/systemd/system/postgresql-restore-test.timer
+    changed_when: false
+  - name: Enable PostgreSQL backup timers
+    ansible.builtin.systemd_service:
+      name: '{{ item }}'
+      enabled: true
+      state: started
+      daemon_reload: true
+    loop: '{{ [''postgresql-backup.timer''] + (postgresql_backup_restore_test_enabled | ternary([''postgresql-restore-test.timer''], [])) }}'
+    when: postgresql_manage_backup_timers

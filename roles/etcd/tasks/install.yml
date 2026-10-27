@@ -1,0 +1,26 @@
+---
+- name: Download the checksum-verified etcd archive
+  ansible.builtin.get_url:
+    url: '{{ _etcd_download }}'
+    dest: /var/cache/degit-etcd/etcd-{{ etcd_version }}-{{ _etcd_arch }}.tar.gz
+    checksum: '{{ _etcd_checksums[etcd_version][_etcd_arch] }}'
+    mode: '0600'
+- name: Extract the verified release
+  ansible.builtin.unarchive:
+    src: /var/cache/degit-etcd/etcd-{{ etcd_version }}-{{ _etcd_arch }}.tar.gz
+    dest: /var/cache/degit-etcd
+    remote_src: true
+    creates: /var/cache/degit-etcd/etcd-v{{ etcd_version }}-linux-{{ _etcd_arch }}/etcd
+- name: Install versioned etcd executables
+  ansible.builtin.copy:
+    src: /var/cache/degit-etcd/etcd-v{{ etcd_version }}-linux-{{ _etcd_arch }}/{{ item }}
+    dest: /usr/local/bin/{{ item }}
+    owner: root
+    group: root
+    mode: '0755'
+    remote_src: true
+  loop:
+  - etcd
+  - etcdctl
+  - etcdutl
+  notify: Restart etcd

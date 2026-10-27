@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+# Native AppArmor profiles cannot read Ansible's controller-user staging path.
+validation_file="$(mktemp {{ _mariadb_validation_dir | quote }}/.degit-validate-XXXXXX.cnf)"
+trap 'rm -f -- "$validation_file"' EXIT
+cp -- "$1" "$validation_file"
+chown mysql:mysql "$validation_file"
+runuser -u mysql -- {{ _mariadb_validator | quote }} --defaults-file="$validation_file" --verbose --help >/dev/null

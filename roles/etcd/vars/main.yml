@@ -1,0 +1,33 @@
+---
+_etcd_architectures:
+  x86_64: amd64
+  aarch64: arm64
+_etcd_checksums:
+  3.6.14:
+    amd64: sha256:ffe840ff9295808e88cce2794a18a5ac87f12a5203c8314d0bf6aa119b41bac5
+    arm64: sha256:fa1b80565ee6fc2df1ae6f57a508b221f3ecc7d591c317c581cd8281b0842b3e
+_etcd_arch: '{{ _etcd_architectures[ansible_facts[''architecture'']] }}'
+_etcd_download: https://github.com/etcd-io/etcd/releases/download/v{{ etcd_version }}/etcd-v{{ etcd_version }}-linux-{{ _etcd_arch }}.tar.gz
+_etcd_configuration:
+  name: '{{ etcd_name }}'
+  data-dir: '{{ etcd_data_dir }}'
+  listen-client-urls: '{{ etcd_listen_client_urls | join('','') }}'
+  advertise-client-urls: '{{ etcd_advertise_client_urls | join('','') }}'
+  listen-peer-urls: '{{ etcd_listen_peer_urls | join('','') }}'
+  initial-advertise-peer-urls: '{{ etcd_initial_advertise_peer_urls | join('','') }}'
+  initial-cluster: '{{ etcd_initial_cluster | dictsort | map(''join'', ''='') | join('','') }}'
+  initial-cluster-state: '{{ etcd_initial_cluster_state }}'
+  initial-cluster-token: '{{ etcd_initial_cluster_token }}'
+  client-transport-security:
+    cert-file: '{{ etcd_cert_file }}'
+    key-file: '{{ etcd_key_file }}'
+    trusted-ca-file: '{{ etcd_ca_file }}'
+    client-cert-auth: '{{ etcd_tls_enabled }}'
+  peer-transport-security:
+    cert-file: '{{ etcd_peer_cert_file }}'
+    key-file: '{{ etcd_peer_key_file }}'
+    trusted-ca-file: '{{ etcd_peer_ca_file }}'
+    client-cert-auth: '{{ etcd_tls_enabled }}'
+  auto-compaction-mode: periodic
+  auto-compaction-retention: 1h
+  snapshot-count: 10000

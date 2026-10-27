@@ -1,0 +1,178 @@
+---
+- name: Validate HA ownership and required inputs
+  ansible.builtin.assert:
+    that:
+    - patroni_scope | length > 0
+    - patroni_etcd_hosts | length > 0
+    - patroni_rest_connect_address | length > 0
+    - patroni_postgresql_connect_address | length > 0
+    - patroni_superuser_password | length >= 12
+    - patroni_replication_password | length >= 12
+    - patroni_rest_password | length >= 12
+    - patroni_service_state in ['started', 'stopped']
+    - patroni_loop_wait | int + 2 * patroni_retry_timeout | int <= patroni_ttl | int
+    - patroni_pg_hba | length > 0
+    - not patroni_manage_firewall or patroni_firewall_sources | length > 0
+    - patroni_postgresql_data_dir is match('^/[A-Za-z0-9_/-]+$')
+    - patroni_name is match('^[A-Za-z0-9_-]+$')
+    - patroni_scope is match('^[A-Za-z0-9_-]+$')
+    - patroni_etcd_protocol != 'https' or patroni_etcd_ca_file | length > 0
+    - postgresql_deployment_mode | default("patroni") == "patroni"
+    fail_msg: Patroni requires explicit cluster addresses, HBA rules, DCS and secret-store credentials.
+    quiet: true
+  no_log: true
+- name: Inspect existing PostgreSQL data
+  ansible.builtin.stat:
+    path: '{{ patroni_postgresql_data_dir }}/PG_VERSION'
+  register: _patroni_data
+- name: Inspect Patroni ownership marker
+  ansible.builtin.stat:
+    path: /etc/patroni/.degit-identity
+  register: _patroni_owned
+- name: Require explicit bootstrap or adoption
+  ansible.builtin.assert:
+    that:
+    - (_patroni_data.stat.exists or patroni_bootstrap)
+    - not _patroni_data.stat.exists or _patroni_owned.stat.exists or patroni_allow_adopt_existing
+    fail_msg: Patroni will neither initialize nor adopt existing data implicitly. Review bootstrap/adoption inputs.
+- name: Inspect persisted patroni identity
+  ansible.builtin.stat:
+    path: /etc/patroni/.degit-identity
+  register: _patroni_identity
+- name: Read persisted patroni identity
+  ansible.builtin.slurp:
+    src: /etc/patroni/.degit-identity
+  register: _patroni_identity_content
+  when: _patroni_identity.stat.exists
+- name: Reject implicit patroni identity or membership changes
+  ansible.builtin.assert:
+    that:
+    - _patroni_identity_content.content | b64decode | trim == patroni_scope
+    fail_msg: Cluster identity changed. Use an explicit reviewed adoption or membership procedure.
+  when: _patroni_identity.stat.exists
+- name: Load the PostgreSQL platform contract before ownership changes
+  ansible.builtin.include_role:
+    name: degitag.database.postgresql
+    tasks_from: preflight
+    public: true
+  vars: &id001
+    postgresql_deployment_mode: patroni
+    postgresql_manage_service: false
+    postgresql_manage_objects: false
+    postgresql_initialize: false
+    postgresql_manage_firewall: false
+- name: Inspect native PostgreSQL service ownership
+  ansible.builtin.service_facts: {}
+- name: Reject a running native PostgreSQL service
+  ansible.builtin.assert:
+    that:
+    - ansible_facts.services.get(_postgresql_daemon ~ '.service', {}).get('state', 'stopped') != 'running'
+    fail_msg: Native PostgreSQL is running. Stop it in an approved handover before assigning this instance to Patroni.
+- name: Prepare PostgreSQL packages without a second service owner
+  ansible.builtin.include_role:
+    name: degitag.database.postgresql
+    public: true
+  vars: *id001
+- name: Install Patroni runtime dependencies
+  ansible.builtin.package:
+    name: '{{ _patroni_packages }}'
+    state: present
+- name: Install a pinned Patroni release in an isolated environment
+  ansible.builtin.pip:
+    name:
+    - patroni[etcd3,psycopg3]=={{ patroni_version }}
+    virtualenv: '{{ _patroni_venv }}'
+    virtualenv_command: '{{ ansible_facts["python"]["executable"] }} -m venv'
+  when: patroni_install
+- name: Refresh native service facts after package installation
+  ansible.builtin.service_facts: {}
+- name: Mask the native instance unit under Patroni ownership
+  ansible.builtin.systemd_service:
+    name: '{{ _postgresql_daemon }}'
+    enabled: false
+    masked: true
+  when:
+  - patroni_manage_service
+  - (_postgresql_daemon ~ '.service') in ansible_facts.services
+- name: Create Patroni configuration and data directories
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: directory
+    owner: '{{ item.owner }}'
+    group: postgres
+    mode: '{{ item.mode }}'
+  loop:
+  - path: /etc/patroni
+    owner: root
+    mode: '0750'
+  - path: '{{ patroni_postgresql_data_dir }}'
+    owner: postgres
+    mode: '0700'
+- name: Label the Patroni data directory for SELinux
+  community.general.sefcontext:
+    target: '{{ patroni_postgresql_data_dir }}(/.*)?'
+    setype: postgresql_db_t
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+  register: _patroni_context
+- name: Apply Patroni data directory labels
+  ansible.builtin.command:
+    argv:
+    - restorecon
+    - -R
+    - '{{ patroni_postgresql_data_dir }}'
+  changed_when: false
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Inspect current patroni service state
+  ansible.builtin.service_facts: {}
+- name: Remember whether patroni was already running
+  ansible.builtin.set_fact:
+    _patroni_was_running: '{{ ansible_facts.services.get(''patroni.service'', {}).get(''state'', ''stopped'') == ''running'' }}'
+- name: Render and validate Patroni configuration
+  ansible.builtin.template:
+    src: patroni.yml.j2
+    dest: '{{ _patroni_config }}'
+    owner: root
+    group: postgres
+    mode: '0640'
+    validate: '{{ _patroni_venv }}/bin/patroni --validate-config %s --ignore-listen-port'
+  no_log: true
+  notify: Restart patroni
+- name: Render Patroni systemd unit
+  ansible.builtin.template:
+    src: patroni.service.j2
+    dest: /etc/systemd/system/patroni.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+  - Reload patroni systemd
+  - Restart patroni
+- name: Record the explicit Patroni owner
+  ansible.builtin.copy:
+    content: '{{ patroni_scope }}
+
+      '
+    dest: /etc/patroni/.degit-identity
+    owner: postgres
+    group: postgres
+    mode: '0600'
+    force: false
+- name: Apply requested Patroni service state
+  ansible.builtin.systemd_service:
+    name: '{{ _patroni_service }}'
+    daemon_reload: true
+    enabled: '{{ patroni_service_enabled }}'
+    state: '{{ patroni_service_state }}'
+  when: patroni_manage_service
+- name: Delegate Patroni API and PostgreSQL rules to the host firewall
+  ansible.builtin.include_role:
+    name: degitag.infrastructure.firewall
+  vars:
+    firewall_rules: '{{ patroni_firewall_sources | map(''community.general.dict_kv'', ''source'') | map(''combine'', {''port'': patroni_rest_listen.rsplit('':'', 1)[1], ''proto'': ''tcp'', ''action'': ''allow''}) | list + patroni_firewall_sources | map(''community.general.dict_kv'', ''source'') | map(''combine'', {''port'': patroni_postgresql_listen.rsplit('':'', 1)[1], ''proto'': ''tcp'', ''action'': ''allow''}) | list }}'
+  when: patroni_manage_firewall
+- name: Configure explicitly requested HA data services
+  ansible.builtin.import_tasks: objects-backup.yml
+  when:
+  - patroni_service_state == 'started'
+  - patroni_manage_objects or patroni_manage_backup

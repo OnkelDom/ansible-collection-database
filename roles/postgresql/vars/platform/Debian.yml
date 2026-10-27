@@ -1,0 +1,15 @@
+---
+_postgresql_default_version: '17'
+_postgresql_version: '{{ postgresql_version | default(_postgresql_default_version, true) }}'
+_postgresql_data_dir: '{{ postgresql_data_dir | default(''/var/lib/postgresql/'' ~ _postgresql_version ~ ''/'' ~ postgresql_cluster_name, true) }}'
+_postgresql_config_path: '{{ postgresql_config_path | default(''/etc/postgresql/'' ~ _postgresql_version ~ ''/'' ~ postgresql_cluster_name, true) }}'
+_postgresql_bin_path: '{{ postgresql_bin_path | default(''/usr/lib/postgresql/'' ~ _postgresql_version ~ ''/bin'', true) }}'
+_postgresql_daemon: '{{ postgresql_daemon | default(''postgresql@'' ~ _postgresql_version ~ ''-'' ~ postgresql_cluster_name, true) }}'
+_postgresql_packages:
+- postgresql-{{ _postgresql_version }}
+- postgresql-client-{{ _postgresql_version }}
+- python3-psycopg2
+- locales
+- acl
+_postgresql_unix_socket_directories_mode: '2775'
+_postgresql_service_path: '{{ postgresql_service_path | default(''/etc/systemd/system/'' ~ _postgresql_daemon ~ ''.service.d'', true) }}'

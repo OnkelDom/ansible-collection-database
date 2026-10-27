@@ -1,0 +1,22 @@
+---
+- name: Exercise database package and configuration convergence
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+  - role: degitag.database.mariadb
+    vars:
+      mariadb_initialize: true
+      mariadb_manage_service: false
+      mariadb_manage_accounts: false
+  - role: degitag.database.postgresql
+    vars:
+      postgresql_initialize: true
+      postgresql_manage_service: false
+      postgresql_manage_objects: false
+  - role: degitag.database.redis
+    vars:
+      redis_manage_service: false
+  - role: degitag.database.memcached
+    vars:
+      memcached_manage_service: false

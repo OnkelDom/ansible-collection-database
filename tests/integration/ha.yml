@@ -1,0 +1,54 @@
+---
+- name: Verify Patroni quorum and replicated data on dedicated test hosts
+  hosts: ha
+  become: true
+  gather_facts: true
+  tasks:
+  - name: Verify the explicit disposable test scope
+    ansible.builtin.assert:
+      that:
+      - database_test_disposable | default(false) | bool
+  - name: Verify the etcd TLS endpoint
+    ansible.builtin.command:
+      argv:
+      - /usr/local/bin/etcdctl
+      - --endpoints=https://{{ ansible_host }}:2379
+      - --cacert={{ etcd_ca_file }}
+      - --cert={{ etcd_cert_file }}
+      - --key={{ etcd_key_file }}
+      - endpoint
+      - health
+    changed_when: false
+  - name: Read the Patroni cluster topology
+    ansible.builtin.command:
+      argv:
+      - /opt/patroni/bin/patronictl
+      - -c
+      - /etc/patroni/patroni.yml
+      - list
+      - -f
+      - json
+    register: _database_test_cluster
+    changed_when: false
+    until: _database_test_cluster.stdout | from_json | selectattr('State', 'equalto', 'streaming') | list | length == 2
+    retries: 30
+    delay: 2
+  - name: Verify one leader and two streaming replicas
+    ansible.builtin.assert:
+      that:
+      - _database_test_cluster.stdout | from_json | length == 3
+      - _database_test_cluster.stdout | from_json | selectattr('Role', 'equalto', 'Leader') | list | length == 1
+      - _database_test_cluster.stdout | from_json | selectattr('State', 'equalto', 'streaming') | list | length == 2
+  - name: Verify the committed probe on every node
+    ansible.builtin.command:
+      argv:
+      - psql
+      - -d
+      - collection_ha
+      - -Atqc
+      - SELECT value FROM collection_probe WHERE id=1
+    become: true
+    become_user: postgres
+    register: _database_test_row
+    changed_when: false
+    failed_when: _database_test_row.stdout != 'replicated'

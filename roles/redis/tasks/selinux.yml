@@ -1,0 +1,22 @@
+---
+- name: Label the configured service TCP port
+  community.general.seport:
+    ports: '{{ redis_server_port }}'
+    proto: tcp
+    setype: redis_port_t
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Label managed redis_var_lib_t paths
+  community.general.sefcontext:
+    target: '{{ redis_server_databases_dir }}(/.*)?'
+    setype: redis_var_lib_t
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'
+- name: Apply managed redis_var_lib_t labels
+  ansible.builtin.command:
+    argv:
+    - restorecon
+    - -R
+    - '{{ redis_server_databases_dir }}'
+  changed_when: false
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts.get('selinux', {}).get('status', '') == 'enabled'

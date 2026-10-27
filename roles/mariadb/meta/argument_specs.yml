@@ -1,42 +1,745 @@
 ---
 argument_specs:
   main:
-    short_description: Install and configure MariaDB.
+    short_description: Entry point for the mariadb role.
+    description:
+    - Validate variables for the `mariadb` role.
     options:
       mariadb_version:
-        type: str
-        required: false
         description:
-          - MariaDB version to install.
-      mariadb_port:
-        type: str
+        - Version.
         required: false
-        description:
-          - TCP port for the MariaDB service.
-      mariadb_bind_address:
         type: str
-        required: false
+      mariadb_debug:
         description:
-          - Bind address for the MariaDB listener.
-      mariadb_enabled_on_startup:
+        - Debug.
+        required: false
         type: bool
-        required: false
+      mariadb_mirror_base_url:
         description:
-          - Whether the MariaDB service is enabled on boot.
-      mariadb_users:
-        type: list
-        elements: dict
+        - Mirror base url.
         required: false
-        description:
-          - User definitions managed by the role.
-      mariadb_databases:
-        type: list
-        elements: dict
-        required: false
-        description:
-          - Database definitions managed by the role.
-      mariadb_replication_role:
         type: str
-        required: false
+      mariadb_create_directories:
         description:
-          - Replication mode of the node, for example primary or replica.
+        - Create directories.
+        required: false
+        type: bool
+      mariadb_dirs:
+        description:
+        - Dirs.
+        required: false
+        type: list
+        elements: dict
+        options:
+          path:
+            type: str
+            description:
+            - Path.
+            required: true
+          owner:
+            type: str
+            description:
+            - Owner.
+          group:
+            type: str
+            description:
+            - Group.
+          mode:
+            type: str
+            description:
+            - Mode.
+      mariadb_manage_pip_dependencies:
+        description:
+        - Manage pip dependencies.
+        required: false
+        type: bool
+      mariadb_packages_extra:
+        description:
+        - Packages extra.
+        required: false
+        type: list
+        elements: str
+      mariadb_http_pkg_proxy:
+        description:
+        - Http pkg proxy.
+        required: false
+        type: str
+      mariadb_https_pkg_proxy:
+        description:
+        - Https pkg proxy.
+        required: false
+        type: str
+      mariadb_admin_home:
+        description:
+        - Admin home.
+        required: false
+        type: str
+      mariadb_admin_user:
+        description:
+        - Admin user.
+        required: false
+        type: str
+      mariadb_admin_password:
+        description:
+        - Admin password.
+        required: false
+        type: str
+        no_log: true
+      mariadb_admin_force_password_update:
+        description:
+        - Admin force password update.
+        required: false
+        type: bool
+      mariadb_overwrite_global_mycnf:
+        description:
+        - Overwrite global mycnf.
+        required: false
+        type: bool
+      mariadb_config_include_dir:
+        description:
+        - Config include dir.
+        required: false
+        type: str
+      mariadb_config_include_files:
+        description:
+        - Config include files.
+        required: false
+        type: list
+        elements: dict
+        options:
+          src:
+            type: str
+            description:
+            - Src.
+            required: true
+          force:
+            type: bool
+            description:
+            - Force.
+      mariadb_users_default_host:
+        description:
+        - Users default host.
+        required: false
+        type: str
+      mariadb_users:
+        description:
+        - Users.
+        required: false
+        type: list
+        elements: dict
+        options:
+          name:
+            type: str
+            description:
+            - Name.
+            required: true
+          host:
+            type: str
+            description:
+            - Host.
+          hosts:
+            type: list
+            description:
+            - Hosts.
+            elements: str
+          password:
+            type: str
+            description:
+            - Password.
+            no_log: true
+          priv:
+            type: str
+            description:
+            - Priv.
+          state:
+            type: str
+            description:
+            - State.
+          append_privs:
+            type: bool
+            description:
+            - Append privs.
+          encrypted:
+            type: bool
+            description:
+            - Encrypted.
+          home:
+            type: str
+            description:
+            - Home.
+          copy_cnf:
+            type: bool
+            description:
+            - Copy cnf.
+        no_log: true
+      mariadb_databases:
+        description:
+        - Databases.
+        required: false
+        type: list
+        elements: dict
+        options:
+          name:
+            type: str
+            description:
+            - Name.
+            required: true
+          state:
+            type: str
+            description:
+            - State.
+            choices:
+            - present
+            - absent
+            - dump
+            - import
+          encoding:
+            type: str
+            description:
+            - Encoding.
+          target:
+            type: str
+            description:
+            - Target.
+          collation:
+            type: str
+            description:
+            - Collation.
+      mariadb_port:
+        description:
+        - Port.
+        required: false
+        type: str
+      mariadb_bind_address:
+        description:
+        - Bind address.
+        required: false
+        type: str
+      mariadb_datadir:
+        description:
+        - Datadir.
+        required: false
+        type: str
+      mariadb_pid_file:
+        description:
+        - Pid file.
+        required: false
+        type: str
+      mariadb_socket:
+        description:
+        - Socket.
+        required: false
+        type: str
+      mariadb_config_datadir:
+        description:
+        - Config datadir.
+        required: false
+        type: str
+      mariadb_logs_datadir:
+        description:
+        - Logs datadir.
+        required: false
+        type: str
+      mariadb_daemon:
+        description:
+        - Daemon.
+        required: false
+        type: str
+      mariadb_key_buffer_size:
+        description:
+        - Key buffer size.
+        required: false
+        type: str
+      mariadb_max_allowed_packet:
+        description:
+        - Max allowed packet.
+        required: false
+        type: str
+      mariadb_table_open_cache:
+        description:
+        - Table open cache.
+        required: false
+        type: str
+      mariadb_sort_buffer_size:
+        description:
+        - Sort buffer size.
+        required: false
+        type: str
+      mariadb_read_buffer_size:
+        description:
+        - Read buffer size.
+        required: false
+        type: str
+      mariadb_read_rnd_buffer_size:
+        description:
+        - Read rnd buffer size.
+        required: false
+        type: str
+      mariadb_myisam_sort_buffer_size:
+        description:
+        - Myisam sort buffer size.
+        required: false
+        type: str
+      mariadb_table_cache:
+        description:
+        - Table cache.
+        required: false
+        type: int
+      mariadb_thread_cache_size:
+        description:
+        - Thread cache size.
+        required: false
+        type: str
+      mariadb_query_cache_size:
+        description:
+        - Query cache size.
+        required: false
+        type: str
+      mariadb_max_connections:
+        description:
+        - Max connections.
+        required: false
+        type: int
+      mariadb_tmp_table_size:
+        description:
+        - Tmp table size.
+        required: false
+        type: str
+      mariadb_max_heap_table_size:
+        description:
+        - Max heap table size.
+        required: false
+        type: str
+      mariadb_join_buffer_size:
+        description:
+        - Join buffer size.
+        required: false
+        type: str
+      mariadb_innodb_file_per_table:
+        description:
+        - Innodb file per table.
+        required: false
+        type: str
+      mariadb_innodb_buffer_pool_size:
+        description:
+        - Innodb buffer pool size.
+        required: false
+        type: str
+      mariadb_innodb_log_file_size:
+        description:
+        - Innodb log file size.
+        required: false
+        type: str
+      mariadb_innodb_log_buffer_size:
+        description:
+        - Innodb log buffer size.
+        required: false
+        type: str
+      mariadb_innodb_flush_log_at_trx_commit:
+        description:
+        - Innodb flush log at trx commit.
+        required: false
+        type: int
+      mariadb_innodb_lock_wait_timeout:
+        description:
+        - Innodb lock wait timeout.
+        required: false
+        type: int
+      mariadb_mysqldump_max_allowed_packet:
+        description:
+        - Mysqldump max allowed packet.
+        required: false
+        type: str
+      mariadb_error_log_enabled:
+        description:
+        - Error log enabled.
+        required: false
+        type: bool
+      mariadb_log:
+        description:
+        - Log.
+        required: false
+        type: str
+      mariadb_log_error:
+        description:
+        - Log error.
+        required: false
+        type: str
+      mariadb_syslog_tag:
+        description:
+        - Syslog tag.
+        required: false
+        type: str
+      mariadb_logs_datadir_group:
+        description:
+        - Logs datadir group.
+        required: false
+        type: str
+      mariadb_slow_query_log_enabled:
+        description:
+        - Slow query log enabled.
+        required: false
+        type: bool
+      mariadb_slow_query_log_file:
+        description:
+        - Slow query log file.
+        required: false
+        type: str
+      mariadb_slow_query_time:
+        description:
+        - Slow query time.
+        required: false
+        type: int
+      mariadb_server_id:
+        description:
+        - Server id.
+        required: false
+        type: str
+      mariadb_max_binlog_size:
+        description:
+        - Max binlog size.
+        required: false
+        type: str
+      mariadb_expire_logs_days:
+        description:
+        - Expire logs days.
+        required: false
+        type: str
+      mariadb_replication_role:
+        description:
+        - Replication role.
+        required: false
+        type: str
+        choices:
+        - ''
+        - primary
+        - replica
+      mariadb_replication_primary:
+        description:
+        - Replication primary.
+        required: false
+        type: str
+      mariadb_replication_primary_inventory_host:
+        description:
+        - Replication primary inventory host.
+        required: false
+        type: str
+      mariadb_replication_primary_socket:
+        description:
+        - Replication primary socket.
+        required: false
+        type: str
+      mariadb_replication_username:
+        description:
+        - Replication username.
+        required: false
+        type: str
+      mariadb_replication_password:
+        description:
+        - Replication password.
+        required: false
+        type: str
+        no_log: true
+      mariadb_replication_priv:
+        description:
+        - Replication priv.
+        required: false
+        type: str
+      mariadb_replication_hosts:
+        description:
+        - Replication hosts.
+        required: false
+        type: list
+        elements: str
+      mariadb_data_at_rest_encryption:
+        description:
+        - Data at rest encryption.
+        required: false
+        type: bool
+      mariadb_encryption_keygen_auto:
+        description:
+        - Encryption keygen auto.
+        required: false
+        type: bool
+      mariadb_encryption_keys:
+        description:
+        - Encryption keys.
+        required: false
+        type: dict
+        no_log: true
+      mariadb_encryption_password:
+        description:
+        - Encryption password.
+        required: false
+        type: str
+        no_log: true
+      mariadb_key_management_plugin:
+        description:
+        - Key management plugin.
+        required: false
+        type: str
+      mariadb_file_key_management_override:
+        description:
+        - File key management override.
+        required: false
+        type: bool
+      mariadb_file_key_management_dir:
+        description:
+        - File key management dir.
+        required: false
+        type: str
+      mariadb_file_key_management_filekey:
+        description:
+        - File key management filekey.
+        required: false
+        type: str
+      mariadb_file_key_management_filename:
+        description:
+        - File key management filename.
+        required: false
+        type: str
+      mariadb_file_key_management_encryption_algorithm:
+        description:
+        - File key management encryption algorithm.
+        required: false
+        type: str
+      mariadb_innodb_encrypt_tables:
+        description:
+        - Innodb encrypt tables.
+        required: false
+        type: str
+      mariadb_innodb_encrypt_temporary_tables:
+        description:
+        - Innodb encrypt temporary tables.
+        required: false
+        type: str
+      mariadb_innodb_encrypt_log:
+        description:
+        - Innodb encrypt log.
+        required: false
+        type: str
+      mariadb_innodb_encryption_threads:
+        description:
+        - Innodb encryption threads.
+        required: false
+        type: int
+      mariadb_innodb_encryption_rotate_key_age:
+        description:
+        - Innodb encryption rotate key age.
+        required: false
+        type: int
+      mariadb_innodb_default_encryption_key_id:
+        description:
+        - Innodb default encryption key id.
+        required: false
+        type: int
+      mariadb_encrypt_tmp_disk_tables:
+        description:
+        - Encrypt tmp disk tables.
+        required: false
+        type: int
+      mariadb_encrypt_tmp_files:
+        description:
+        - Encrypt tmp files.
+        required: false
+        type: int
+      mariadb_encrypt_binlog:
+        description:
+        - Encrypt binlog.
+        required: false
+        type: str
+      mariadb_aria_encrypt_tables:
+        description:
+        - Aria encrypt tables.
+        required: false
+        type: str
+      mariadb_wait_timeout:
+        description:
+        - Wait timeout.
+        required: false
+        type: int
+      mariadb_net_read_timeout:
+        description:
+        - Net read timeout.
+        required: false
+        type: int
+      mariadb_skip_name_resolve:
+        description:
+        - Skip name resolve.
+        required: false
+        type: bool
+      mariadb_max_connect_errors:
+        description:
+        - Max connect errors.
+        required: false
+        type: int
+      mariadb_open_files_limit:
+        description:
+        - Open files limit.
+        required: false
+        type: int
+      mariadb_interactive_timeout:
+        description:
+        - Interactive timeout.
+        required: false
+        type: int
+      mariadb_connect_timeout:
+        description:
+        - Connect timeout.
+        required: false
+        type: int
+      mariadb_table_definition_cache:
+        description:
+        - Table definition cache.
+        required: false
+        type: int
+      mariadb_systemd_override_dir:
+        description:
+        - Systemd override dir.
+        required: false
+        type: str
+      mariadb_systemd_override:
+        description:
+        - Systemd override.
+        required: false
+        type: list
+        elements: dict
+        options:
+          filename:
+            type: str
+            description:
+            - Filename.
+          section:
+            type: str
+            description:
+            - Section.
+          options:
+            type: dict
+            description:
+            - Options.
+      mariadb_backup:
+        description:
+        - Backup.
+        required: false
+        type: bool
+      mariadb_backup_root_dir:
+        description:
+        - Backup root dir.
+        required: false
+        type: str
+      mariadb_backup_dbnames:
+        description:
+        - Backup dbnames.
+        required: false
+        type: str
+      mariadb_backup_dbexclude:
+        description:
+        - Backup dbexclude.
+        required: false
+        type: str
+      mariadb_backup_cron_job_name:
+        description:
+        - Backup cron job name.
+        required: false
+        type: str
+      mariadb_backup_schedule:
+        description:
+        - Backup schedule.
+        required: false
+        type: dict
+      mariadb_backup_keep_count:
+        description:
+        - Backup keep count.
+        required: false
+        type: int
+      mariadb_backup_mail_addr:
+        description:
+        - Backup mail addr.
+        required: false
+        type: str
+      mariadb_config_file:
+        description:
+        - Config file.
+        required: false
+        type: str
+      mariadb_config_include_default_dirs:
+        description:
+        - Config include default dirs.
+        required: false
+        type: bool
+      mariadb_manage_service:
+        description:
+        - Manage service.
+        required: false
+        type: bool
+      mariadb_service_enabled:
+        description:
+        - Service enabled.
+        required: false
+        type: bool
+      mariadb_service_state:
+        description:
+        - Service state.
+        required: false
+        type: str
+        choices:
+        - started
+        - stopped
+      mariadb_manage_firewall:
+        description:
+        - Manage firewall.
+        required: false
+        type: bool
+      mariadb_firewall_sources:
+        description:
+        - Firewall sources.
+        required: false
+        type: list
+        elements: str
+      mariadb_packages:
+        description:
+        - Packages.
+        required: false
+        type: list
+        elements: str
+      mariadb_manage_accounts:
+        description:
+        - Manage accounts.
+        required: false
+        type: bool
+      mariadb_initialize:
+        description:
+        - Initialize.
+        required: false
+        type: bool
+      mariadb_allow_replication_reconfigure:
+        description:
+        - Allow replication reconfigure.
+        required: false
+        type: bool
+      mariadb_allow_data_migration:
+        description:
+        - Allow explicitly declared database import, restore, export or rename operations.
+        required: false
+        type: bool
+      mariadb_remove_anonymous_users:
+        description:
+        - Explicitly remove anonymous users.
+        required: false
+        type: bool
+      mariadb_remove_test_database:
+        description:
+        - Explicitly remove test database.
+        required: false
+        type: bool
+      mariadb_manage_backup_schedule:
+        description:
+        - Explicitly enable the configured cron backup schedule.
+        required: false
+        type: bool
+      mariadb_allow_disable_encryption:
+        description:
+        - Allow removal of managed encryption configuration only after a reviewed decryption procedure.
+        required: false
+        type: bool

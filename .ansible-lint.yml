@@ -1,0 +1,13 @@
+---
+profile: production
+exclude_paths:
+- .ansible/
+- .venv/
+- .git/
+- .host-collection/
+supported_ansible_also:
+- 2.20.
+- 2.21.
+# SQL object helpers and HA integrations intentionally share typed internal variables.
+skip_list:
+- var-naming[no-role-prefix]

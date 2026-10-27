@@ -1,72 +1,13 @@
 # AGENTS.md
 
-Dieses Repository enthaelt die Ansible Collection `lenmail.database`.
+This repository maintains `degitag.database` with mariadb, postgresql, redis, memcached, patroni and etcd roles. Use vim in instructions. Write documentation from the DevOps/system architecture perspective.
 
-## Aktueller Stand
+Support Debian 13, Ubuntu 22.04/24.04/26.04 and Rocky/RHEL 9. All four sibling collections use the same generated role scaffold, fact-aware preflight, layered platform variables, typed public API, service guards and check commands. Preserve existing uncommitted work.
 
-- Die Rollen `mariadb`, `postgresql`, `redis` und `memcached` wurden aus bestehenden Einzel-Repositories uebernommen.
-- Das Repository ist als Collection strukturiert, aber nicht alle importierten Upstream-Dokumente wurden bereits bereinigt.
-- Neue Aenderungen sollen sich am Collection-Layout orientieren, nicht mehr am alten Einzelrollen-Layout.
+Host networking and additive firewall rules belong to `degitag.infrastructure`. Patroni is the sole PostgreSQL service owner in HA mode; etcd owns consensus. Never delete a data directory, reset DCS, rotate encryption keys, bootstrap a cluster, migrate data or change cluster membership implicitly. Database initialization and external binary installation require explicit switches. Existing topology requires a reviewed operator procedure.
 
-## Ziele
+Use tools/generate_role_scaffold.py and tools/role_scaffold_config.yml for generated content. Implementation belongs in tasks/configuration.yml. Defaults must validate before facts are loaded. Secrets must remain in Vault and secret tasks use no_log. Native EL9 SELinux enforcement stays enabled.
 
-- Datenbank- und Caching-Rollen fuer Ubuntu 22.04+, Debian 12+ und RHEL 9+ konsistent halten
-- importierte Rollen schrittweise auf einen gemeinsamen Collection-Standard bringen
-- lokale Checks auf macOS reproduzierbar halten
+Run scaffold --check, pytest tests/unit, YAML lint, production Ansible lint, all role syntax checks, artifact build/install and compile/import sanity. Container smoke must converge on five free target images; real service, SELinux, reboot, replication, Patroni failover, backup and restore need disposable VMs. Document actual evidence and gaps in docs/validation; no production or repository publication is authorized by a refactor.
 
-## Pflicht fuer neue oder geaenderte Rollen
-
-- `README.md` pro Rolle
-- `meta/main.yml`
-- `meta/argument_specs.yml`
-- `tests/test.yml`
-- Plattform-Support explizit dokumentieren
-- keine impliziten Distribution-Annahmen ohne `assert` oder klares `when`
-
-## Collection-Struktur
-
-- Rollen liegen unter `roles/<rollenname>`
-- Beispiel-Playbooks liegen unter `playbooks/`
-- Collection-Metadaten liegen in `galaxy.yml` und `meta/runtime.yml`
-- Vollqualifizierte Rollen-Namen verwenden immer `lenmail.database.<rolle>`
-
-## Rollen-Standard
-
-- Defaults muessen sicher und ohne versteckte Fremdvariablen nutzbar sein
-- Rollen mit Diensten sollen Konfiguration vor Restart oder Enable validieren, wenn ein Validator verfuegbar ist
-- plattformspezifische Paketnamen, Pfade und Services gehoeren in `vars/`
-- neue Tasks sollen moeglichst `ansible.builtin.*` verwenden
-- Secrets gehoeren nicht in Defaults, sondern muessen leer oder optional sein
-- Service-Rollen sollen offensichtliche Schalter wie `*_service_enabled`, `*_enabled_on_startup` oder gleichwertige Steuerung haben
-- Rollen mit generierten Dateien sollen idempotent bleiben und veraltete Artefakte nach Moeglichkeit bereinigen
-
-## Lokale Toolchain
-
-- Auf macOS die lokale `.venv` mit Homebrew `python@3.12` bauen
-- Homebrew nicht mit `sudo` ausfuehren
-- Beispiel:
-  - `/opt/homebrew/opt/python@3.12/bin/python3.12 -m venv .venv`
-  - `.venv/bin/pip install -r requirements-test.txt`
-
-## Mindestchecks vor Commit
-
-- `ansible-galaxy collection build`
-- `ansible-playbook --syntax-check playbooks/mariadb.yml`
-- `ansible-playbook --syntax-check playbooks/postgresql.yml`
-- `ansible-playbook --syntax-check playbooks/redis.yml`
-- `ansible-playbook --syntax-check playbooks/memcached.yml`
-- `ansible-lint`
-
-## Plattform-Regeln
-
-- Debian- und RedHat-spezifische Pfade, Paketnamen und Service-Namen muessen getrennt gepflegt werden
-- Rollen mit distributionsspezifischem Verhalten sollen das frueh validieren
-- Facts werden auf Play-Ebene gesammelt, nicht per `setup` pauschal in jeder Rolle
-- Syntax- und Beispiel-Playbooks muessen `gather_facts: true` setzen
-- Wenn eine Rolle nicht sinnvoll plattformuebergreifend ist, lieber klar eingrenzen als implizit brechen
-
-## Doku- und Namespace-Regeln
-
-- Collection-Referenzen immer als `lenmail.database.*`
-- keine neuen Verweise auf alte Namespaces wie `claranet.*` oder `lenhardt-its.*`
-- importierte READMEs duerfen schrittweise bereinigt werden, neue Beispiele muessen aber direkt den Collection-Namespace verwenden
+The current GitHub repository owner is OnkelDom; Ansible namespace is degitag. A repository transfer requires a separate operator decision. Run the shared local entry point bash tests/run_checks.sh. Local toolchain uses Homebrew Python 3.12 and .venv. No credentials in logs, defaults or repository files.

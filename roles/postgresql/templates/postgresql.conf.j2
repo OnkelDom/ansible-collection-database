@@ -1,0 +1,4 @@
+# Managed by degitag.database
+{% for item in postgresql_global_config_options + postgresql_autotune_config_options + postgresql_global_config_options_extra %}
+{{ item.option }} = '{{ item.value | string | replace("'", "''") }}'
+{% endfor %}

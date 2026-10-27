@@ -1,0 +1,7 @@
+---
+_memcached_packages:
+- memcached
+_memcached_service: memcached
+_memcached_config: /etc/memcached.conf
+_memcached_user: memcache
+_memcached_backend: debian
