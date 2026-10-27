@@ -1,4 +1,7 @@
 #!/bin/bash
+{% if postgresql_backup_primary_only %}
+[[ "$(psql -p {{ postgresql_port | int }} -Atqc 'SELECT pg_is_in_recovery()')" == "f" ]] || exit 0
+{% endif %}
 
 # ((( License and Copyright
 # PostgreSQL Backup Script

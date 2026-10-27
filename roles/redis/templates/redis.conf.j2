@@ -1,0 +1,7 @@
+# Managed by degitag.database
+{% for key, value in _redis_conf_final | dictsort %}
+{{ key }} {{ value | to_json if key in ["requirepass", "masterauth"] else value }}
+{% endfor %}
+{% if redis_role == 'replica' %}
+replicaof {{ redis_master_ip }} {{ redis_server_port }}
+{% endif %}

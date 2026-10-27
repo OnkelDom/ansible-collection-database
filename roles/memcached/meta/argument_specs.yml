@@ -1,41 +1,79 @@
 ---
 argument_specs:
   main:
-    short_description: Install and configure memcached.
+    short_description: Entry point for the memcached role.
+    description:
+    - Validate variables for the `memcached` role.
     options:
       memcached_verbose:
+        description:
+        - Verbose.
+        required: false
         type: bool
-        required: false
-        description:
-          - Enables verbose logging for memcached.
       memcached_memory:
-        type: int
-        required: false
         description:
-          - Memory in megabytes reserved for memcached.
+        - Memory.
+        required: false
+        type: int
       memcached_port:
+        description:
+        - Port.
+        required: false
         type: int
-        required: false
-        description:
-          - TCP port for memcached.
       memcached_user:
-        type: str
-        required: false
         description:
-          - Optional system user running memcached.
+        - User.
+        required: false
+        type: str
       memcached_listen:
+        description:
+        - Listen.
+        required: false
         type: list
         elements: str
-        required: false
-        description:
-          - Addresses memcached listens on.
       memcached_maxconn:
+        description:
+        - Maxconn.
+        required: false
         type: int
-        required: false
+      memcached_extra_options:
         description:
-          - Maximum number of concurrent client connections.
-      memcached_restart:
+        - Extra options.
+        required: false
+        type: list
+        elements: str
+      memcached_manage_service:
+        description:
+        - Manage service.
+        required: false
         type: bool
-        required: false
+      memcached_service_enabled:
         description:
-          - Whether the role should force a restart.
+        - Service enabled.
+        required: false
+        type: bool
+      memcached_service_state:
+        description:
+        - Service state.
+        required: false
+        type: str
+        choices:
+        - started
+        - stopped
+      memcached_manage_firewall:
+        description:
+        - Manage firewall.
+        required: false
+        type: bool
+      memcached_firewall_sources:
+        description:
+        - Firewall sources.
+        required: false
+        type: list
+        elements: str
+      memcached_packages:
+        description:
+        - Packages.
+        required: false
+        type: list
+        elements: str

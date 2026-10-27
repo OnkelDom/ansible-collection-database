@@ -3,4 +3,5 @@
   hosts: all
   gather_facts: true
   roles:
-    - role: lenmail.database.memcached
+  - role: degitag.database.memcached
+  become: true

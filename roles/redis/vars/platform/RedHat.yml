@@ -1,0 +1,10 @@
+---
+_redis_packages:
+- redis
+- policycoreutils-python-utils
+_redis_service: redis
+_redis_config: /etc/redis/redis.conf
+_redis_sentinel_service: redis-sentinel
+_redis_sentinel_config: /etc/redis/sentinel.conf
+_redis_user: redis
+_redis_group: redis

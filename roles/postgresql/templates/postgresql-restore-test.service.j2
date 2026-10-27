@@ -1,11 +1,11 @@
 {{ ansible_managed | comment }}
 [Unit]
 Description=PostgreSQL backup restore test
-After=postgresql.service
-Requires=postgresql.service
+After={{ _postgresql_daemon }}.service
 
 [Service]
 Type=oneshot
+ExecCondition=/usr/bin/systemctl is-active --quiet {{ _postgresql_daemon }}.service
 User={{ postgresql_user }}
 Group={{ postgresql_group }}
 ExecStart={{ postgresql_backup_custom_script_dest }} restore-test

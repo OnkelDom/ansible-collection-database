@@ -1,0 +1,19 @@
+[Unit]
+Description=etcd distributed consensus store
+After=network-online.target
+Wants=network-online.target
+[Service]
+User=etcd
+Group=etcd
+ExecStart=/usr/local/bin/etcd --config-file=/etc/etcd/etcd.yml
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ etcd_data_dir }}
+PrivateTmp=true
+[Install]
+WantedBy=multi-user.target

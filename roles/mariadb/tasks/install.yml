@@ -1,20 +1,40 @@
 ---
-- name: "Include tasks for install in {{ _ansible_os_family }}"
-  ansible.builtin.include_tasks: "{{ _ansible_os_family }}/install.yml"
-
-- name: Include {{ ansible_pkg_mgr + '/install.yml' }}
-  ansible.builtin.include_tasks: "{{ item }}"
-  loop: "{{ query('first_found', params) }}"
-  vars:
-    params:
-      files:
-        - "{{ ansible_pkg_mgr }}/install.yml"
-      skip: true
-
-- name: Install pip dependencies (externally managed environments are also supported)
-  ansible.builtin.pip:
-    name: "{{ _mariadb_dependencies_pip_packages }}"
-    extra_args: "{{ _mariadb_python_env_externally_managed | ternary('--user --break-system-packages', '') }}"
-  when:
-    - mariadb_manage_pip_dependencies
-...
+- name: Install MariaDB packages without starting the service
+  ansible.builtin.apt:
+    name: '{{ mariadb_packages | default(_mariadb_packages, true) + mariadb_packages_extra }}'
+    state: present
+    policy_rc_d: 101
+  when: ansible_facts['os_family'] == 'Debian'
+- name: Install native EL9 MariaDB packages
+  ansible.builtin.dnf:
+    name: '{{ mariadb_packages | default(_mariadb_packages, true) + mariadb_packages_extra }}'
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+- name: Inspect MariaDB data initialization
+  ansible.builtin.stat:
+    path: '{{ mariadb_datadir }}/mysql'
+  register: _mariadb_initialized
+- name: Require explicit initialization for an empty data directory
+  ansible.builtin.assert:
+    that:
+    - _mariadb_initialized.stat.exists or (mariadb_initialize | bool)
+    fail_msg: Set mariadb_initialize=true to initialize a new database. Existing data is never removed.
+- name: Create the explicitly selected MariaDB data directory
+  ansible.builtin.file:
+    path: '{{ mariadb_datadir }}'
+    owner: mysql
+    group: mysql
+    state: directory
+    mode: '0750'
+- name: Configure selinux
+  ansible.builtin.import_tasks: selinux.yml
+- name: Initialize an empty MariaDB directory
+  ansible.builtin.command:
+    argv:
+    - '{{ _mariadb_install_db }}'
+    - --user=mysql
+    - --datadir={{ mariadb_datadir }}
+    creates: '{{ mariadb_datadir }}/mysql'
+  when: not _mariadb_initialized.stat.exists
+  become: true
+  become_user: mysql

@@ -1,0 +1,13 @@
+---
+- name: Reload etcd systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when: etcd_manage_service
+- name: Restart etcd
+  ansible.builtin.systemd_service:
+    name: etcd
+    state: restarted
+  when:
+  - etcd_manage_service
+  - etcd_service_state == 'started'
+  - _etcd_was_running | default(false)

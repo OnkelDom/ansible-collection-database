@@ -1,27 +1,61 @@
 ---
-namespace: onkeldom
+namespace: degitag
 name: database
-version: 0.1.0
+version: 2.0.0
 readme: README.md
 authors:
-  - Dominik Lenhardt <dominik@lenhardt-it.com>
-description: Ansible collection for database and caching services maintained under the onkeldom namespace.
+- Dominik Lenhardt
+description: Native database and cache services with explicit lifecycle management
 license:
-  - MIT
+- MIT
+- MPL-2.0
+- GPL-2.0-or-later
 tags:
-  - database
-  - postgresql
-  - mariadb
-  - redis
-  - memcached
-dependencies: {}
-repository: https://github.com/OnkelDom/ansible-collection-database
-issues: https://github.com/OnkelDom/ansible-collection-database/issues
+- database
+- postgresql
+- mariadb
+- redis
+- memcached
+dependencies:
+  community.general: '>=13.0.0,<14.0.0'
+  ansible.posix: '>=2.1.0,<3.0.0'
+  ansible.mysql: '>=4.0.0,<5.0.0'
+  community.postgresql: '>=4.1.0,<5.0.0'
+repository: https://github.com/degitag/ansible-collection-database
+issues: https://github.com/degitag/ansible-collection-database/issues
 build_ignore:
-  - .git
-  - .github
-  - .pytest_cache
-  - .mypy_cache
-  - .ruff_cache
-  - .venv
-  - tests/output
+- .git
+- .github
+- .venv
+- .ansible
+- .host-collection
+- .pytest_cache
+- '**/__pycache__'
+- '*.tar.gz'
+- tools
+- tests
+- roles/*/tests
+- roles/*/molecule
+- AGENTS.md
+- requirements-test.txt
+- requirements-dev.yml
+- ansible.cfg
+- .ansible-lint.yml
+- .yamllint.yml
+- docs
+- .editorconfig
+- Makefile
+- CONTRIBUTING.md
+- SECURITY.md
+- CHANGELOG.md
+- .gitignore
+- '**/.gitignore'
+- '**/CONTRIBUTING.md'
+- '**/CHANGELOG.md'
+- .DS_Store
+- '**/.DS_Store'
+- '.venv*'
+- '.env*'
+- '.zshenv*'
+documentation: https://github.com/degitag/ansible-collection-database
+homepage: https://github.com/degitag/ansible-collection-database

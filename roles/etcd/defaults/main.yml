@@ -1,0 +1,25 @@
+---
+etcd_version: 3.6.14
+etcd_install: false
+etcd_initialize: false
+etcd_name: '{{ inventory_hostname }}'
+etcd_initial_cluster: {}
+etcd_initial_cluster_token: ''
+etcd_initial_cluster_state: new
+etcd_data_dir: /var/lib/etcd
+etcd_listen_client_urls: []
+etcd_advertise_client_urls: []
+etcd_listen_peer_urls: []
+etcd_initial_advertise_peer_urls: []
+etcd_tls_enabled: true
+etcd_ca_file: ''
+etcd_cert_file: ''
+etcd_key_file: ''
+etcd_peer_ca_file: ''
+etcd_peer_cert_file: ''
+etcd_peer_key_file: ''
+etcd_manage_service: true
+etcd_service_enabled: true
+etcd_service_state: started
+etcd_manage_firewall: false
+etcd_firewall_sources: []

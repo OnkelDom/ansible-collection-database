@@ -1,7 +1,7 @@
-.DS_Store
 .venv/
-*.retry
-__pycache__/
+.ansible/
 .pytest_cache/
-.molecule/
-tests/output/
+__pycache__/
+*.pyc
+*.tar.gz
+.host-collection/

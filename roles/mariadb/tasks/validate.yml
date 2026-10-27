@@ -1,0 +1,54 @@
+---
+- name: Validate service and lifecycle inputs before changes
+  ansible.builtin.assert:
+    that:
+    - mariadb_port | int >= 1
+    - mariadb_port | int <= 65535
+    - mariadb_service_state in ['started', 'stopped']
+    - not mariadb_manage_firewall or mariadb_firewall_sources | length > 0
+    - not mariadb_admin_force_password_update or mariadb_admin_password | length >= 12
+    - mariadb_replication_role in ['', 'primary', 'replica']
+    - mariadb_replication_role == '' or (mariadb_replication_password | length >= 12 and mariadb_server_id | int > 0)
+    - mariadb_replication_role != 'replica' or mariadb_replication_primary | length > 0
+    - not mariadb_data_at_rest_encryption or (not mariadb_encryption_keygen_auto and mariadb_encryption_keys | length > 0 and mariadb_encryption_password | length >= 20)
+    - not mariadb_file_key_management_override
+    - not mariadb_manage_pip_dependencies
+    - mariadb_version | length == 0
+    - mariadb_mirror_base_url | length == 0
+    - mariadb_allow_data_migration or (mariadb_databases | selectattr('state', 'defined') | rejectattr('state', 'in', ['present', 'absent']) | list | length == 0)
+    - mariadb_syslog_tag is match('^[A-Za-z0-9_.-]*$')
+    fail_msg: Invalid mariadb inputs. Review the typed contract and docs/migration.md.
+    quiet: true
+- name: Inspect MariaDB initialization before package changes
+  ansible.builtin.stat:
+    path: '{{ mariadb_datadir }}/mysql'
+  register: _mariadb_before_install
+- name: Require explicit permission before initializing a new MariaDB instance
+  ansible.builtin.assert:
+    that:
+    - _mariadb_before_install.stat.exists or (mariadb_initialize | bool)
+    fail_msg: Set mariadb_initialize=true for a new database. Initialization is never inferred from empty defaults.
+- name: Validate supplied encryption keys
+  ansible.builtin.assert:
+    that:
+    - item.key | string is match('^[1-9][0-9]*$')
+    - item.value is match('^[a-fA-F0-9]{64}$')
+  loop: '{{ mariadb_encryption_keys | dict2items }}'
+  when: mariadb_data_at_rest_encryption
+  no_log: true
+- name: Inspect existing managed MariaDB configuration
+  ansible.builtin.stat:
+    path: '{{ _mariadb_config_file }}'
+  register: _mariadb_existing_config
+- name: Read existing managed encryption configuration
+  ansible.builtin.slurp:
+    src: '{{ _mariadb_config_file }}'
+  register: _mariadb_existing_config_content
+  when: _mariadb_existing_config.stat.exists
+  no_log: true
+- name: Reject implicit removal of an active encryption plugin
+  ansible.builtin.assert:
+    that:
+    - mariadb_data_at_rest_encryption or mariadb_allow_disable_encryption or not ((_mariadb_existing_config_content.content | default('') | b64decode) is search('(?m)^plugin_load_add\s*=\s*file_key_management'))
+    fail_msg: Existing managed encryption cannot be disabled implicitly. Keep encryption inputs or plan and approve decryption first.
+  no_log: true

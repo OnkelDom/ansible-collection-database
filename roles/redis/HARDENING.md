@@ -1,4 +1,5 @@
-# Introduction
-In this document, a list of relevant settings for hardening redis.
-This document is non-exhaustive, however, it provides a solid base of security hardening 
-measures.
+# Sicherheit von redis
+
+Die gemeinsame Sicherheitsrichtlinie steht in [SECURITY.md](../../SECURITY.md). Die [Rollen-README](README.md) dokumentiert die aktuellen Defaults und Sicherheitsoptionen; betriebliche Grenzen und Migrationen stehen in [docs/migration.md](../../docs/migration.md).
+
+Produktive Absicherung und Freigabe erfolgen anhand des konkreten Listener-, Authentifizierungs-, Backup- und Netzwerkmodells. Die vorhandenen [Validierungsnachweise](../../docs/validation/) ersetzen keine Abnahme der eigenen Umgebung.

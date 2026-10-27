@@ -1,0 +1,46 @@
+---
+_patroni_configuration:
+  scope: '{{ patroni_scope }}'
+  namespace: '{{ patroni_namespace }}'
+  name: '{{ patroni_name }}'
+  restapi:
+    listen: '{{ patroni_rest_listen }}'
+    connect_address: '{{ patroni_rest_connect_address }}'
+    authentication:
+      username: '{{ patroni_rest_username }}'
+      password: '{{ patroni_rest_password }}'
+    certfile: '{{ patroni_rest_cert_file }}'
+    keyfile: '{{ patroni_rest_key_file }}'
+  etcd3:
+    hosts: '{{ patroni_etcd_hosts }}'
+    protocol: '{{ patroni_etcd_protocol }}'
+    cacert: '{{ patroni_etcd_ca_file }}'
+    cert: '{{ patroni_etcd_cert_file }}'
+    key: '{{ patroni_etcd_key_file }}'
+    username: '{{ patroni_etcd_username }}'
+    password: '{{ patroni_etcd_password }}'
+  bootstrap:
+    dcs: '{{ {''ttl'': patroni_ttl, ''loop_wait'': patroni_loop_wait, ''retry_timeout'': patroni_retry_timeout, ''synchronous_mode'': patroni_synchronous_mode, ''synchronous_node_count'': patroni_synchronous_node_count, ''synchronous_mode_strict'': patroni_synchronous_mode_strict, ''postgresql'': {''use_pg_rewind'': true, ''parameters'': patroni_parameters}} | combine(patroni_bootstrap_dcs, recursive=true) }}'
+    initdb:
+    - encoding: UTF8
+    - data-checksums
+    pg_hba: '{{ patroni_pg_hba }}'
+  postgresql:
+    listen: '{{ patroni_postgresql_listen }}'
+    connect_address: '{{ patroni_postgresql_connect_address }}'
+    data_dir: '{{ patroni_postgresql_data_dir }}'
+    bin_dir: '{{ _postgresql_bin_path }}'
+    authentication:
+      superuser:
+        username: '{{ patroni_superuser_username }}'
+        password: '{{ patroni_superuser_password }}'
+      replication:
+        username: '{{ patroni_replication_username }}'
+        password: '{{ patroni_replication_password }}'
+    parameters: '{{ patroni_parameters }}'
+    remove_data_directory_on_rewind_failure: false
+    remove_data_directory_on_diverged_timelines: false
+  watchdog:
+    mode: '{{ patroni_watchdog_mode }}'
+    device: '{{ patroni_watchdog_device }}'
+  tags: '{{ patroni_tags }}'

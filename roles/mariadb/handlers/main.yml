@@ -1,7 +1,12 @@
 ---
-- name: "Restart MariaDB on config changes"
-  ansible.builtin.systemd:
-    name: "{{ _mariadb_daemon }}"
-    state: restarted
+- name: Reload systemd
+  ansible.builtin.systemd_service:
     daemon_reload: true
-    enabled: "{{ mariadb_enabled_on_startup | d(true) }}"
+  when: mariadb_manage_service
+- name: Restart mariadb
+  ansible.builtin.service:
+    name: '{{ _mariadb_daemon }}'
+    state: restarted
+  when:
+  - mariadb_manage_service
+  - mariadb_service_state == 'started'

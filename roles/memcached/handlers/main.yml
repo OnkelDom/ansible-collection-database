@@ -1,16 +1,8 @@
 ---
-- name: "Warn that memcached should be restarted"
-  ansible.builtin.debug:
-    msg:
-      - "****"
-      - "**** !!! MANUAL RESTART NEEDED !!!"
-      - "**** Configuration files changed! "
-      - "**** You have to restart memcached manually"
-      - "****"
-  when: not memcached_restart
-
-- name: "Systemctl restart memcached@{{ memcached_port }}.service"    # noqa name
+- name: Restart memcached
   ansible.builtin.service:
-    name: memcached@{{ memcached_port }}.service
+    name: '{{ _memcached_service }}'
     state: restarted
-  when: memcached_restart
+  when:
+  - memcached_manage_service
+  - memcached_service_state == 'started'

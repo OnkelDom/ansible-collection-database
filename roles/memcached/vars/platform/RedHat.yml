@@ -1,0 +1,8 @@
+---
+_memcached_packages:
+- memcached
+- policycoreutils-python-utils
+_memcached_service: memcached
+_memcached_config: /etc/sysconfig/memcached
+_memcached_user: memcached
+_memcached_backend: redhat

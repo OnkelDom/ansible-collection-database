@@ -1,12 +1,13 @@
-#!/bin/bash
-# Nettoyage des vieux backups MySQL/MariaDB
-# {{ ansible_managed }}
-
-# Important - si vous changez «ARCHIVEDIR» dans automysqlbackup.sh, 
-# merci de changer aussi la variable qui suit pour que ça corresponde !
-DIR='{{ mariadb_backup_root_dir }}/archives'
-mkdir -p $DIR
-
-# on conserve les {{ mariadb_backup_keep_count }} sauvegardes les plus recentes, quelque soit leur date
-# les autres sont supprimees.
-find "$DIR" -maxdepth 1 -type d -name '20[0-9][0-9]-*m' | sort | head -n -{{ mariadb_backup_keep_count }} | xargs rm -r
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+cd /
+readonly ARCHIVES={{ (mariadb_backup_root_dir ~ '/archives') | quote }}
+readonly KEEP={{ mariadb_backup_keep_count | int }}
+[[ -d "$ARCHIVES" ]] || exit 0
+count=0
+while IFS= read -r snapshot; do
+  [[ -f "$snapshot/.degit-backup" ]] || continue
+  count=$((count + 1))
+  if [[ "$count" -gt "$KEEP" ]]; then rm -rf -- "$snapshot"; fi
+done < <(find "$ARCHIVES" -mindepth 1 -maxdepth 1 -type d -name 'degit-*' | sort -r)

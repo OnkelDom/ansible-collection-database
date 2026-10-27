@@ -1,1 +1,0 @@
-../../shared/test_redis_replication.py

@@ -1,0 +1,24 @@
+---
+_mariadb_default_config_datadir: /etc/mysql
+_mariadb_default_config_file: /etc/mysql/my.cnf
+_mariadb_default_config_included_dirs:
+- /etc/mysql/conf.d
+- /etc/mysql/mariadb.conf.d
+_mariadb_config_datadir: '{{ mariadb_config_datadir | default(_mariadb_default_config_datadir, true) }}'
+_mariadb_config_file: '{{ mariadb_config_file | default(''/etc/mysql/mariadb.conf.d/99-degit.cnf'', true) }}'
+_mariadb_config_include_dir: '{{ mariadb_config_include_dir | default(''/etc/mysql/mariadb.conf.d'', true) }}'
+_mariadb_socket: '{{ mariadb_socket | default(''/run/mysqld/mysqld.sock'', true) }}'
+_mariadb_pid_file: '{{ mariadb_pid_file | default(''/run/mysqld/mysqld.pid'', true) }}'
+_mariadb_daemon: '{{ mariadb_daemon | default(''mariadb'', true) }}'
+_mariadb_syslog_tag: mariadb
+_mariadb_packages:
+- mariadb-server
+- mariadb-client
+- python3-pymysql
+- openssl
+- acl
+_mariadb_install_db: /usr/bin/mariadb-install-db
+_mariadb_validator: /usr/sbin/mariadbd
+_mariadb_validation_dir: /etc/mysql
+_mariadb_client: /usr/bin/mariadb
+_mariadb_dump: /usr/bin/mariadb-dump

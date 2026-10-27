@@ -1,5 +1,0 @@
----
-
-- name: Install memcached
-  ansible.builtin.dnf:
-    name: "{{ _memcached_package_name }}"

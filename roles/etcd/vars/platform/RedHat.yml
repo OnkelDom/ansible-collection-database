@@ -1,0 +1,5 @@
+---
+_etcd_packages:
+- ca-certificates
+- tar
+- gzip

@@ -25,13 +25,7 @@
 
 - name: Extract individual parameters from autotune response
   ansible.builtin.set_fact:
-    postgresql_autotune_config_options: "{{ _postgresql_autotune_res.content |
-      regex_replace('^#.*$', '', multiline=true) |
-      regex_replace('^listen_addresses.*$', '', multiline=true) |
-      regex_replace('^\\n+', '', multiline=true) |
-      regex_replace('\\n+$', '', multiline=true) |
-      regex_replace('=', ':', multiline=true) |
-      from_yaml | dict2items(key_name='option', value_name='value') }}"
+    postgresql_autotune_config_options: "{{ _postgresql_autotune_res.content | regex_replace('^#.*$', '', multiline=true) | regex_replace('^listen_addresses.*$', '', multiline=true) | regex_replace('^\\n+', '', multiline=true) | regex_replace('\\n+$', '', multiline=true) | regex_replace('=', ':', multiline=true) | from_yaml | dict2items(key_name='option', value_name='value') }}"
   when: _postgresql_autotune_res is succeeded
 
 - name: "Output autotune optimized settings"

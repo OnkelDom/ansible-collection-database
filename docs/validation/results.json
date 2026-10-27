@@ -1,0 +1,132 @@
+{
+  "date": "2026-10-19",
+  "collection": "degit.database",
+  "version": "2.0.0",
+  "native_platforms": [
+    "Debian 13",
+    "Ubuntu 22.04",
+    "Ubuntu 24.04",
+    "Ubuntu 26.04",
+    "Rocky Linux 9"
+  ],
+  "native_roles": [
+    "mariadb",
+    "postgresql",
+    "redis",
+    "memcached"
+  ],
+  "second_run_changed": 0,
+  "native_service_and_data_probes": true,
+  "native_reboots": true,
+  "rocky_selinux": "Enforcing",
+  "stopped_service_handlers": "passed",
+  "ha_platform": "Ubuntu 24.04, three nodes",
+  "patroni": {
+    "abrupt_primary_vm_loss_election_seconds": 37.13,
+    "committed_row_retained": true,
+    "encrypted_backup_restore_on_replacement": true,
+    "former_primary_rejoined": true,
+    "no_writable_primary_without_etcd_quorum": true,
+    "quorum_recovery": true,
+    "native_postgresql_owner_mask_survives_reboot": true,
+    "second_run_changed": 0
+  },
+  "mariadb": {
+    "replication_row_verified": true,
+    "native_table_encryption_verified": true,
+    "native_atomic_backup_verified": true,
+    "restore_on_separate_encryption_capable_server": true,
+    "restored_row": "replicated",
+    "retained_snapshots": 2
+  },
+  "redis_sentinel": {
+    "election_seconds": 7.23,
+    "replicated_row_retained": true,
+    "former_primary_rejoined": true,
+    "rerun_preserves_elected_primary": true,
+    "second_run_changed": 0
+  },
+  "initialization_guards": {
+    "mariadb-init": {
+      "rejected_before_software_changes": true,
+      "changed": 0
+    },
+    "postgresql-init": {
+      "rejected_before_software_changes": true,
+      "changed": 0
+    },
+    "patroni-init": {
+      "rejected_before_software_changes": true,
+      "changed": 0
+    },
+    "etcd-init": {
+      "rejected_before_software_changes": true,
+      "changed": 0
+    },
+    "patroni-native-owner": {
+      "rejected_before_software_changes": true,
+      "changed": 0
+    }
+  },
+  "other_negative_checks": {
+    "encryption-removal": {
+      "rejected": true,
+      "changed": 0
+    },
+    "sentinel-password": {
+      "rejected": true,
+      "changed": 0
+    }
+  },
+  "limitations": [
+    "No subscribed RHEL 9 runtime test; synthetic RHEL preflight only.",
+    "No ARM runtime test.",
+    "HA, encryption and replication scenarios executed on Ubuntu 24.04, not every distribution.",
+    "Production PKI, PostgreSQL wire TLS, Patroni REST TLS and watchdog/fencing not accepted by these scenarios.",
+    "No production migration, rolling major upgrade or exhaustive SQL-object combinations.",
+    "GitHub workflows prepared but not executed; no publication."
+  ],
+  "container_smoke": {
+    "artifact_sha256": "c1096082705093cf131edd026bc50c1a7c63199be161a9587eb17d2365d7cd87",
+    "cases": [
+      {
+        "image": "ubuntu:22.04",
+        "exit_code": 0,
+        "second_run_changed": 0,
+        "seconds": 102.9
+      },
+      {
+        "image": "ubuntu:24.04",
+        "exit_code": 0,
+        "second_run_changed": 0,
+        "seconds": 111.6
+      },
+      {
+        "image": "ubuntu:26.04",
+        "exit_code": 0,
+        "second_run_changed": 0,
+        "seconds": 105.4
+      },
+      {
+        "image": "debian:13",
+        "exit_code": 0,
+        "second_run_changed": 0,
+        "seconds": 100.6
+      },
+      {
+        "image": "rockylinux:9",
+        "exit_code": 0,
+        "second_run_changed": 0,
+        "seconds": 65.1
+      }
+    ]
+  },
+  "ansible_core_2_20_syntax_and_platform_preflight": "passed",
+  "cleanup": {
+    "owned_test_vms_removed": 7,
+    "owned_seed_isos_removed": 7,
+    "remote_test_image_cache_removed": true,
+    "local_disposable_private_pki_and_secret_files_removed": true,
+    "production_changes": false
+  }
+}

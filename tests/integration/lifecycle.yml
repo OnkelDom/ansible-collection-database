@@ -1,0 +1,57 @@
+---
+- name: Verify guarded service and handler behavior on dedicated hosts
+  hosts: baseline
+  become: true
+  gather_facts: true
+  tasks:
+  - name: Verify the explicit disposable test scope
+    ansible.builtin.assert:
+      that:
+      - database_test_disposable | default(false) | bool
+  - name: Render mariadb configuration while requesting a stopped service
+    ansible.builtin.include_role:
+      name: degitag.database.mariadb
+      public: true
+    vars:
+      mariadb_service_state: stopped
+      mariadb_max_connections: 152
+  - name: Render postgresql configuration while requesting a stopped service
+    ansible.builtin.include_role:
+      name: degitag.database.postgresql
+      public: true
+    vars:
+      postgresql_service_state: stopped
+      postgresql_max_connections: 101
+  - name: Render redis configuration while requesting a stopped service
+    ansible.builtin.include_role:
+      name: degitag.database.redis
+      public: true
+    vars:
+      redis_service_state: stopped
+      redis_conf:
+        maxmemory: 128mb
+  - name: Render memcached configuration while requesting a stopped service
+    ansible.builtin.include_role:
+      name: degitag.database.memcached
+      public: true
+    vars:
+      memcached_service_state: stopped
+      memcached_memory: 65
+  - name: Inspect final service states
+    ansible.builtin.service_facts: {}
+  - name: Verify stopped _mariadb_daemon stays stopped after handlers
+    ansible.builtin.assert:
+      that:
+      - ansible_facts.services[_mariadb_daemon ~ '.service'].state == 'stopped'
+  - name: Verify stopped _postgresql_daemon stays stopped after handlers
+    ansible.builtin.assert:
+      that:
+      - ansible_facts.services[_postgresql_daemon ~ '.service'].state == 'stopped'
+  - name: Verify stopped _redis_service stays stopped after handlers
+    ansible.builtin.assert:
+      that:
+      - ansible_facts.services[_redis_service ~ '.service'].state == 'stopped'
+  - name: Verify stopped _memcached_service stays stopped after handlers
+    ansible.builtin.assert:
+      that:
+      - ansible_facts.services[_memcached_service ~ '.service'].state == 'stopped'

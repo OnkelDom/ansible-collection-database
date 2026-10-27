@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-27",
+  "collection": "degitag.database",
+  "version": "2.0.0",
+  "contract": "degitag-collections-v1",
+  "coordination": {
+    "coordinator": "infrastructure",
+    "database_owner": "database chat",
+    "other_owners": {
+      "monitoring": "monitoring chat",
+      "proxmox": "proxmox chat",
+      "k3s": "infrastructure chat"
+    },
+    "foreign_repositories_modified_by_this_chat": false
+  },
+  "command": "bash tests/run_checks.sh",
+  "exit_code": 0,
+  "controller": {
+    "python": "3.12.16",
+    "ansible_core": "2.21.5",
+    "ansible_lint": "26.10.1",
+    "pytest": "9.1.1",
+    "yamllint": "1.38.0"
+  },
+  "unit_tests_passed": 49,
+  "shared_unit_tests": 15,
+  "checks_passed": [
+    "repository contract",
+    "scaffold --check",
+    "pytest tests/unit",
+    "yamllint",
+    "build and manifest/payload hash validation",
+    "collection installation",
+    "synthetic preflight for six roles",
+    "all role, example and integration playbook syntax",
+    "ansible-lint production",
+    "sanity compile/import",
+    "make package-smoke",
+    "workflow and shell entrypoint bash syntax",
+    "git diff --check"
+  ],
+  "artifact": {
+    "name": "degitag-database-2.0.0.tar.gz",
+    "sha256": "c69d02029131fe137f059992c92f8de47acf8a5c9d7ad9618c36841881e855a7",
+    "entries": 255
+  },
+  "shared_file_sha256": {
+    "docs/repository-standard.md": "d16398b6f6f807f55319c75d945c10550235c5c00f4adcca0372b0ec153e144a",
+    ".editorconfig": "1023fd774150f1ddc05c50686326791fa5017d933469961869cdf948244a58a1",
+    "Makefile": "3cbb2a532be4c2843a422a716ded534584e1087d0123d69f16a4b713e8d0900e",
+    "tools/check_collection_artifact.py": "b68d7b00bbbadda8d0b579477c23fcd0a12086b4f07346224c2f5c1cc9d10458",
+    "tools/check_repository.py": "c9b29d436e4ae0c4879501724e5a589f9a770592ef02b90776c3613f38a70c3d",
+    "tools/collection_metadata.py": "5464c76212aa08dac7f0df7cb17d457c0a3aad45609df4912b440ada9827c1c0",
+    "tests/run_collection_sanity.sh": "54e797fe0f39c7e39c70615678ff66d61e8c2240588832728ece4c6bafc40aa9",
+    "tests/unit/test_collection_artifact.py": "2e781d658a7bc6eb4f96eda74265231f53ba40a9b513b52aabccff15a0ee154b",
+    "tests/unit/test_repository_contract.py": "15d685c36f0aa6112e17329b2da3cd9b93ced9ea25e2d6c208b1c43a1b890c04",
+    "tools/generate_role_scaffold.py": "a8a302ee169653bfd6a012712bb92f2c3b92ec0192a0aa3a7cab9b0410d89992",
+    "tools/format_yaml.py": "726c26670b69386aba6e7815ca2912a9a7af37f86749a17c6df4b7cf137f622d"
+  },
+  "limitations": [
+    "Docker unavailable: no new five-image container smoke run.",
+    "No native service, SELinux, reboot, replication, failover, backup or restore VM run for this artifact.",
+    "Core 2.20 matrix and changed GitHub workflows not executed in this run.",
+    "Syntax checks emit expected unmatched disposable inventory-group warnings; no remote hosts were contacted."
+  ],
+  "published": false,
+  "production_changes": false
+}

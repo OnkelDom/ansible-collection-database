@@ -1,0 +1,82 @@
+---
+- name: Determine whether this node is the writable primary
+  community.postgresql.postgresql_query:
+    query: SELECT pg_is_in_recovery() AS in_recovery
+    port: '{{ patroni_postgresql_listen.rsplit('':'', 1)[1] | int }}'
+    login_unix_socket: /var/run/postgresql
+  become: true
+  become_user: postgres
+  register: _patroni_primary_query
+  until: _patroni_primary_query is succeeded
+  retries: 30
+  delay: 2
+  no_log: true
+- name: Manage HA users only on the primary
+  ansible.builtin.include_role:
+    name: degitag.database.postgresql
+    tasks_from: users
+  vars:
+    postgresql_port: '{{ patroni_postgresql_listen.rsplit('':'', 1)[1] | int }}'
+    postgresql_deployment_mode: patroni
+  when:
+  - patroni_manage_objects
+  - not _patroni_primary_query.query_result[0].in_recovery
+- name: Manage HA tablespaces only on the primary
+  ansible.builtin.include_role:
+    name: degitag.database.postgresql
+    tasks_from: tablespaces
+  vars:
+    postgresql_port: '{{ patroni_postgresql_listen.rsplit('':'', 1)[1] | int }}'
+    postgresql_deployment_mode: patroni
+  when:
+  - patroni_manage_objects
+  - not _patroni_primary_query.query_result[0].in_recovery
+- name: Manage HA databases only on the primary
+  ansible.builtin.include_role:
+    name: degitag.database.postgresql
+    tasks_from: databases
+  vars:
+    postgresql_port: '{{ patroni_postgresql_listen.rsplit('':'', 1)[1] | int }}'
+    postgresql_deployment_mode: patroni
+  when:
+  - patroni_manage_objects
+  - not _patroni_primary_query.query_result[0].in_recovery
+- name: Manage HA ownerships only on the primary
+  ansible.builtin.include_role:
+    name: degitag.database.postgresql
+    tasks_from: ownerships
+  vars:
+    postgresql_port: '{{ patroni_postgresql_listen.rsplit('':'', 1)[1] | int }}'
+    postgresql_deployment_mode: patroni
+  when:
+  - patroni_manage_objects
+  - not _patroni_primary_query.query_result[0].in_recovery
+- name: Manage HA extensions only on the primary
+  ansible.builtin.include_role:
+    name: degitag.database.postgresql
+    tasks_from: extensions
+  vars:
+    postgresql_port: '{{ patroni_postgresql_listen.rsplit('':'', 1)[1] | int }}'
+    postgresql_deployment_mode: patroni
+  when:
+  - patroni_manage_objects
+  - not _patroni_primary_query.query_result[0].in_recovery
+- name: Manage HA sql only on the primary
+  ansible.builtin.include_role:
+    name: degitag.database.postgresql
+    tasks_from: sql
+  vars:
+    postgresql_port: '{{ patroni_postgresql_listen.rsplit('':'', 1)[1] | int }}'
+    postgresql_deployment_mode: patroni
+  when:
+  - patroni_manage_objects
+  - not _patroni_primary_query.query_result[0].in_recovery
+- name: Install primary-aware backup jobs on every HA member
+  ansible.builtin.include_role:
+    name: degitag.database.postgresql
+    tasks_from: backup
+  vars:
+    _postgresql_daemon: patroni
+    postgresql_backup_primary_only: true
+    postgresql_port: '{{ patroni_postgresql_listen.rsplit('':'', 1)[1] | int }}'
+  when: patroni_manage_backup

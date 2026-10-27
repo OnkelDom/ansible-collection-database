@@ -36,15 +36,13 @@ datadir = {{ mariadb_datadir }}
 socket = {{ _mariadb_socket }}
 pid-file = {{ _mariadb_pid_file }}
 
-# Logging configuration.
-{% if mariadb_log_error == 'syslog' or mariadb_log == 'syslog' %}
-syslog
-syslog-tag = {{ _mariadb_syslog_tag }}
-{% else %}
-{% if mariadb_log %}
-log = {{ mariadb_log }}
+# The native service sends stderr to the system journal.
+{% if mariadb_log and mariadb_log != 'syslog' %}
+general_log = 1
+general_log_file = {{ mariadb_log }}
 {% endif %}
-log-error = {{ mariadb_log_error }}
+{% if mariadb_error_log_enabled and mariadb_log_error != 'syslog' %}
+log_error = {{ mariadb_log_error }}
 {% endif %}
 
 {% if mariadb_slow_query_log_enabled %}

@@ -1,0 +1,31 @@
+---
+- name: Configure initialize
+  ansible.builtin.import_tasks: initialize.yml
+- name: Configure autotune
+  ansible.builtin.import_tasks: autotune.yml
+  when: postgresql_autotune
+- name: Configure configure
+  ansible.builtin.import_tasks: configure.yml
+- name: Apply validated settings before database operations
+  ansible.builtin.meta: flush_handlers
+- name: Configure users
+  ansible.builtin.import_tasks: users.yml
+  when: postgresql_manage_objects and postgresql_service_state == 'started'
+- name: Configure tablespaces
+  ansible.builtin.import_tasks: tablespaces.yml
+  when: postgresql_manage_objects and postgresql_service_state == 'started'
+- name: Configure databases
+  ansible.builtin.import_tasks: databases.yml
+  when: postgresql_manage_objects and postgresql_service_state == 'started'
+- name: Configure ownerships
+  ansible.builtin.import_tasks: ownerships.yml
+  when: postgresql_manage_objects and postgresql_service_state == 'started'
+- name: Configure extensions
+  ansible.builtin.import_tasks: extensions.yml
+  when: postgresql_manage_objects and postgresql_service_state == 'started'
+- name: Configure sql
+  ansible.builtin.import_tasks: sql.yml
+  when: postgresql_manage_objects and postgresql_service_state == 'started'
+- name: Configure backup
+  ansible.builtin.import_tasks: backup.yml
+  when: postgresql_backup and postgresql_service_state == 'started'

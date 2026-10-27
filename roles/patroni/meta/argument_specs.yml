@@ -1,0 +1,254 @@
+---
+argument_specs:
+  main:
+    short_description: Entry point for the patroni role.
+    description:
+    - Validate variables for the `patroni` role.
+    options:
+      patroni_scope:
+        description:
+        - Scope.
+        required: false
+        type: str
+      patroni_name:
+        description:
+        - Name.
+        required: false
+        type: str
+      patroni_namespace:
+        description:
+        - Namespace.
+        required: false
+        type: str
+      patroni_version:
+        description:
+        - Version.
+        required: false
+        type: str
+      patroni_install:
+        description:
+        - Install.
+        required: false
+        type: bool
+      patroni_bootstrap:
+        description:
+        - Bootstrap.
+        required: false
+        type: bool
+      patroni_allow_adopt_existing:
+        description:
+        - Allow adopt existing.
+        required: false
+        type: bool
+      patroni_manage_service:
+        description:
+        - Manage service.
+        required: false
+        type: bool
+      patroni_service_enabled:
+        description:
+        - Service enabled.
+        required: false
+        type: bool
+      patroni_service_state:
+        description:
+        - Service state.
+        required: false
+        type: str
+        choices:
+        - started
+        - stopped
+      patroni_manage_firewall:
+        description:
+        - Manage firewall.
+        required: false
+        type: bool
+      patroni_firewall_sources:
+        description:
+        - Firewall sources.
+        required: false
+        type: list
+        elements: str
+      patroni_etcd_hosts:
+        description:
+        - Etcd hosts.
+        required: false
+        type: list
+        elements: str
+      patroni_etcd_protocol:
+        description:
+        - Etcd protocol.
+        required: false
+        type: str
+        choices:
+        - https
+        - http
+      patroni_etcd_ca_file:
+        description:
+        - Etcd ca file.
+        required: false
+        type: str
+      patroni_etcd_cert_file:
+        description:
+        - Etcd cert file.
+        required: false
+        type: str
+      patroni_etcd_key_file:
+        description:
+        - Etcd key file.
+        required: false
+        type: str
+      patroni_etcd_username:
+        description:
+        - Etcd username.
+        required: false
+        type: str
+      patroni_etcd_password:
+        description:
+        - Etcd password.
+        required: false
+        type: str
+        no_log: true
+      patroni_rest_listen:
+        description:
+        - Rest listen.
+        required: false
+        type: str
+      patroni_rest_connect_address:
+        description:
+        - Rest connect address.
+        required: false
+        type: str
+      patroni_rest_username:
+        description:
+        - Rest username.
+        required: false
+        type: str
+      patroni_rest_password:
+        description:
+        - Rest password.
+        required: false
+        type: str
+        no_log: true
+      patroni_rest_cert_file:
+        description:
+        - Rest cert file.
+        required: false
+        type: str
+      patroni_rest_key_file:
+        description:
+        - Rest key file.
+        required: false
+        type: str
+      patroni_postgresql_listen:
+        description:
+        - Postgresql listen.
+        required: false
+        type: str
+      patroni_postgresql_connect_address:
+        description:
+        - Postgresql connect address.
+        required: false
+        type: str
+      patroni_postgresql_data_dir:
+        description:
+        - Postgresql data dir.
+        required: false
+        type: str
+      patroni_superuser_username:
+        description:
+        - Superuser username.
+        required: false
+        type: str
+      patroni_superuser_password:
+        description:
+        - Superuser password.
+        required: false
+        type: str
+        no_log: true
+      patroni_replication_username:
+        description:
+        - Replication username.
+        required: false
+        type: str
+      patroni_replication_password:
+        description:
+        - Replication password.
+        required: false
+        type: str
+        no_log: true
+      patroni_pg_hba:
+        description:
+        - Pg hba.
+        required: false
+        type: list
+        elements: str
+      patroni_parameters:
+        description:
+        - Parameters.
+        required: false
+        type: dict
+      patroni_bootstrap_dcs:
+        description:
+        - Bootstrap dcs.
+        required: false
+        type: dict
+      patroni_tags:
+        description:
+        - Tags.
+        required: false
+        type: dict
+      patroni_watchdog_mode:
+        description:
+        - Watchdog mode.
+        required: false
+        type: str
+        choices:
+        - "off"
+        - automatic
+        - required
+      patroni_watchdog_device:
+        description:
+        - Watchdog device.
+        required: false
+        type: str
+      patroni_ttl:
+        description:
+        - Ttl.
+        required: false
+        type: int
+      patroni_loop_wait:
+        description:
+        - Loop wait.
+        required: false
+        type: int
+      patroni_retry_timeout:
+        description:
+        - Retry timeout.
+        required: false
+        type: int
+      patroni_synchronous_mode:
+        description:
+        - Synchronous mode.
+        required: false
+        type: bool
+      patroni_synchronous_node_count:
+        description:
+        - Synchronous node count.
+        required: false
+        type: int
+      patroni_synchronous_mode_strict:
+        description:
+        - Synchronous mode strict.
+        required: false
+        type: bool
+      patroni_manage_objects:
+        description:
+        - Enable explicit primary-aware objects management.
+        required: false
+        type: bool
+      patroni_manage_backup:
+        description:
+        - Enable explicit primary-aware backup management.
+        required: false
+        type: bool

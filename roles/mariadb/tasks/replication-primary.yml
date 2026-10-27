@@ -1,19 +1,13 @@
 ---
-- name: debug
-  ansible.builtin.debug:
-    var: mariadb_replication_username
-  when: mariadb_debug
-
-# https://mariadb.com/kb/en/setting-up-replication/, https://www.digitalocean.com/community/tutorials/how-to-set-up-replication-in-mysql
-- name: "Ensure replication user exists on primary."
-  community.mysql.mysql_user:
-    host: "{{ item }}"
-    name: "{{ mariadb_replication_username }}"
-    password: "{{ mariadb_replication_password }}"
-    priv: "{{ mariadb_replication_priv }}"
+- name: Ensure replication user exists on primary.
+  ansible.mysql.mysql_user:
+    host: '{{ item }}'
+    name: '{{ mariadb_replication_username }}'
+    password: '{{ mariadb_replication_password }}'
+    priv: '{{ mariadb_replication_priv }}'
     append_privs: "no"
-    login_unix_socket: "{{ _mariadb_socket }}"
+    login_unix_socket: '{{ _mariadb_socket }}'
     state: present
-  loop: "{{ mariadb_replication_hosts }}"
+  loop: '{{ mariadb_replication_hosts }}'
   tags: skip_ansible_galaxy
-  # no_log: "{{ not mariadb_debug }}"
+  no_log: true

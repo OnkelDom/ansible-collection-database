@@ -1,0 +1,16 @@
+---
+- name: Configure validate
+  ansible.builtin.import_tasks: validate.yml
+- name: Configure setup vars
+  ansible.builtin.import_tasks: setup-vars.yml
+- name: Configure install
+  ansible.builtin.import_tasks: install.yml
+- name: Configure the standalone PostgreSQL lifecycle
+  ansible.builtin.import_tasks: standalone.yml
+  when: postgresql_deployment_mode == 'standalone'
+- name: Delegate additive port rules to the host firewall
+  ansible.builtin.include_role:
+    name: degitag.infrastructure.firewall
+  vars:
+    firewall_rules: '{{ postgresql_firewall_sources | map(''community.general.dict_kv'', ''source'') | map(''combine'', {''port'': postgresql_port | string, ''proto'': ''tcp'', ''action'': ''allow''}) | list }}'
+  when: postgresql_manage_firewall

@@ -1,0 +1,2146 @@
+---
+collection_namespace: degitag
+collection_name: database
+min_ansible_version: '2.20'
+common_platforms:
+- name: Ubuntu
+  display: Ubuntu 22.04, 24.04, 26.04
+  versions:
+  - jammy
+  - noble
+  - resolute
+- name: Debian
+  display: Debian 13
+  versions:
+  - trixie
+- name: EL
+  display: Rocky Linux 9 / RHEL 9
+  versions:
+  - '9'
+role_descriptions:
+  mariadb: Install and configure mariadb with explicit service and data lifecycle management.
+  postgresql: Install and configure postgresql with explicit service and data lifecycle management.
+  redis: Install and configure redis with explicit service and data lifecycle management.
+  memcached: Install and configure memcached with explicit service and data lifecycle management.
+  patroni: Manage PostgreSQL high availability through Patroni and an explicit etcd-v3 DCS.
+  etcd: Manage a checksum-pinned etcd consensus cluster for Patroni.
+role_notes:
+  mariadb: Native distribution packages replace implicit upstream repositories. Root socket authentication remains enabled by default. Initialization, replication, encryption and backups require explicit inputs. Existing encryption keys are never automatically rotated or overwritten.
+  postgresql: Standalone mode uses native distribution packages. Set postgresql_initialize=true for a new cluster. In HA mode use degitag.database.patroni instead; it prepares PostgreSQL packages with a single service owner. Major upgrades, uninstall and legacy manual replication are never implicit. Backups and restore tests require separate opt-ins.
+  redis: Native distribution services replace custom instance units. With Sentinel enabled, Redis runtime configuration is rendered only on first handover; Sentinel owns subsequent primary/replica changes. Normal reruns preserve CONFIG REWRITE and failover state. Configuration or credential rotation requires explicit redis_sentinel_allow_reconfigure=true with inputs reflecting the current topology.
+  memcached: Service tasks and handlers honor manage_service, service_enabled and service_state. Optional port rules delegate to degitag.infrastructure.firewall. Review docs/migration.md before changing an existing installation.
+  patroni: Patroni is the sole owner of PostgreSQL start, stop, leader election and replication in HA mode. Bootstrap and adoption require explicit flags. bootstrap.dcs only initializes a new DCS scope; use patronictl edit-config for changes to an existing cluster. No automatic data-directory deletion or DCS reset is performed.
+  etcd: Initial membership is a bootstrap input. Membership changes require an explicit etcdctl member add/remove procedure and quorum review. TLS and client/peer authentication are enabled by default; certificates are supplied by the operator. Installation of external release binaries requires etcd_install=true. Release assets are provided for x86_64 and aarch64; ARM execution requires a separate runtime acceptance test.
+role_argument_overrides:
+  etcd:
+    etcd_version:
+      description:
+      - Version.
+    etcd_install:
+      description:
+      - Install.
+    etcd_initialize:
+      description:
+      - Initialize.
+    etcd_name:
+      description:
+      - Name.
+    etcd_initial_cluster:
+      description:
+      - Initial cluster.
+    etcd_initial_cluster_token:
+      description:
+      - Initial cluster token.
+    etcd_initial_cluster_state:
+      description:
+      - Initial cluster state.
+      choices:
+      - new
+      - existing
+    etcd_data_dir:
+      description:
+      - Data dir.
+    etcd_listen_client_urls:
+      description:
+      - Listen client urls.
+      type: list
+      elements: str
+    etcd_advertise_client_urls:
+      description:
+      - Advertise client urls.
+      type: list
+      elements: str
+    etcd_listen_peer_urls:
+      description:
+      - Listen peer urls.
+      type: list
+      elements: str
+    etcd_initial_advertise_peer_urls:
+      description:
+      - Initial advertise peer urls.
+      type: list
+      elements: str
+    etcd_tls_enabled:
+      description:
+      - Tls enabled.
+    etcd_ca_file:
+      description:
+      - Ca file.
+    etcd_cert_file:
+      description:
+      - Cert file.
+    etcd_key_file:
+      description:
+      - Key file.
+    etcd_peer_ca_file:
+      description:
+      - Peer ca file.
+    etcd_peer_cert_file:
+      description:
+      - Peer cert file.
+    etcd_peer_key_file:
+      description:
+      - Peer key file.
+    etcd_manage_service:
+      description:
+      - Manage service.
+    etcd_service_enabled:
+      description:
+      - Service enabled.
+    etcd_service_state:
+      description:
+      - Service state.
+      choices:
+      - started
+      - stopped
+    etcd_manage_firewall:
+      description:
+      - Manage firewall.
+    etcd_firewall_sources:
+      description:
+      - Firewall sources.
+      type: list
+      elements: str
+  mariadb:
+    mariadb_version:
+      description:
+      - Version.
+    mariadb_debug:
+      description:
+      - Debug.
+    mariadb_mirror_base_url:
+      description:
+      - Mirror base url.
+    mariadb_create_directories:
+      description:
+      - Create directories.
+    mariadb_dirs:
+      description:
+      - Dirs.
+      type: list
+      elements: dict
+      options:
+        path:
+          type: str
+          description:
+          - Path.
+          required: true
+        owner:
+          type: str
+          description:
+          - Owner.
+        group:
+          type: str
+          description:
+          - Group.
+        mode:
+          type: str
+          description:
+          - Mode.
+    mariadb_manage_pip_dependencies:
+      description:
+      - Manage pip dependencies.
+    mariadb_packages_extra:
+      description:
+      - Packages extra.
+      type: list
+      elements: str
+    mariadb_http_pkg_proxy:
+      description:
+      - Http pkg proxy.
+    mariadb_https_pkg_proxy:
+      description:
+      - Https pkg proxy.
+    mariadb_admin_home:
+      description:
+      - Admin home.
+    mariadb_admin_user:
+      description:
+      - Admin user.
+    mariadb_admin_password:
+      description:
+      - Admin password.
+    mariadb_admin_force_password_update:
+      description:
+      - Admin force password update.
+    mariadb_overwrite_global_mycnf:
+      description:
+      - Overwrite global mycnf.
+    mariadb_config_include_dir:
+      description:
+      - Config include dir.
+    mariadb_config_include_files:
+      description:
+      - Config include files.
+      type: list
+      elements: dict
+      options:
+        src:
+          type: str
+          description:
+          - Src.
+          required: true
+        force:
+          type: bool
+          description:
+          - Force.
+    mariadb_users_default_host:
+      description:
+      - Users default host.
+    mariadb_users:
+      description:
+      - Users.
+      type: list
+      elements: dict
+      options:
+        name:
+          type: str
+          description:
+          - Name.
+          required: true
+        host:
+          type: str
+          description:
+          - Host.
+        hosts:
+          type: list
+          description:
+          - Hosts.
+          elements: str
+        password:
+          type: str
+          description:
+          - Password.
+          no_log: true
+        priv:
+          type: str
+          description:
+          - Priv.
+        state:
+          type: str
+          description:
+          - State.
+        append_privs:
+          type: bool
+          description:
+          - Append privs.
+        encrypted:
+          type: bool
+          description:
+          - Encrypted.
+        home:
+          type: str
+          description:
+          - Home.
+        copy_cnf:
+          type: bool
+          description:
+          - Copy cnf.
+      no_log: true
+    mariadb_databases:
+      description:
+      - Databases.
+      type: list
+      elements: dict
+      options:
+        name:
+          type: str
+          description:
+          - Name.
+          required: true
+        state:
+          type: str
+          description:
+          - State.
+          choices:
+          - present
+          - absent
+          - dump
+          - import
+        encoding:
+          type: str
+          description:
+          - Encoding.
+        target:
+          type: str
+          description:
+          - Target.
+        collation:
+          type: str
+          description:
+          - Collation.
+    mariadb_port:
+      description:
+      - Port.
+    mariadb_bind_address:
+      description:
+      - Bind address.
+    mariadb_datadir:
+      description:
+      - Datadir.
+    mariadb_pid_file:
+      description:
+      - Pid file.
+    mariadb_socket:
+      description:
+      - Socket.
+    mariadb_config_datadir:
+      description:
+      - Config datadir.
+    mariadb_logs_datadir:
+      description:
+      - Logs datadir.
+    mariadb_daemon:
+      description:
+      - Daemon.
+    mariadb_key_buffer_size:
+      description:
+      - Key buffer size.
+    mariadb_max_allowed_packet:
+      description:
+      - Max allowed packet.
+    mariadb_table_open_cache:
+      description:
+      - Table open cache.
+    mariadb_sort_buffer_size:
+      description:
+      - Sort buffer size.
+    mariadb_read_buffer_size:
+      description:
+      - Read buffer size.
+    mariadb_read_rnd_buffer_size:
+      description:
+      - Read rnd buffer size.
+    mariadb_myisam_sort_buffer_size:
+      description:
+      - Myisam sort buffer size.
+    mariadb_table_cache:
+      description:
+      - Table cache.
+    mariadb_thread_cache_size:
+      description:
+      - Thread cache size.
+    mariadb_query_cache_size:
+      description:
+      - Query cache size.
+    mariadb_max_connections:
+      description:
+      - Max connections.
+    mariadb_tmp_table_size:
+      description:
+      - Tmp table size.
+    mariadb_max_heap_table_size:
+      description:
+      - Max heap table size.
+    mariadb_join_buffer_size:
+      description:
+      - Join buffer size.
+    mariadb_innodb_file_per_table:
+      description:
+      - Innodb file per table.
+    mariadb_innodb_buffer_pool_size:
+      description:
+      - Innodb buffer pool size.
+    mariadb_innodb_log_file_size:
+      description:
+      - Innodb log file size.
+    mariadb_innodb_log_buffer_size:
+      description:
+      - Innodb log buffer size.
+    mariadb_innodb_flush_log_at_trx_commit:
+      description:
+      - Innodb flush log at trx commit.
+    mariadb_innodb_lock_wait_timeout:
+      description:
+      - Innodb lock wait timeout.
+    mariadb_mysqldump_max_allowed_packet:
+      description:
+      - Mysqldump max allowed packet.
+    mariadb_error_log_enabled:
+      description:
+      - Error log enabled.
+    mariadb_log:
+      description:
+      - Log.
+    mariadb_log_error:
+      description:
+      - Log error.
+    mariadb_syslog_tag:
+      description:
+      - Syslog tag.
+    mariadb_logs_datadir_group:
+      description:
+      - Logs datadir group.
+    mariadb_slow_query_log_enabled:
+      description:
+      - Slow query log enabled.
+    mariadb_slow_query_log_file:
+      description:
+      - Slow query log file.
+    mariadb_slow_query_time:
+      description:
+      - Slow query time.
+    mariadb_server_id:
+      description:
+      - Server id.
+    mariadb_max_binlog_size:
+      description:
+      - Max binlog size.
+    mariadb_expire_logs_days:
+      description:
+      - Expire logs days.
+    mariadb_replication_role:
+      description:
+      - Replication role.
+      choices:
+      - ''
+      - primary
+      - replica
+    mariadb_replication_primary:
+      description:
+      - Replication primary.
+    mariadb_replication_primary_inventory_host:
+      description:
+      - Replication primary inventory host.
+    mariadb_replication_primary_socket:
+      description:
+      - Replication primary socket.
+    mariadb_replication_username:
+      description:
+      - Replication username.
+    mariadb_replication_password:
+      description:
+      - Replication password.
+    mariadb_replication_priv:
+      description:
+      - Replication priv.
+    mariadb_replication_hosts:
+      description:
+      - Replication hosts.
+      type: list
+      elements: str
+    mariadb_data_at_rest_encryption:
+      description:
+      - Data at rest encryption.
+    mariadb_encryption_keygen_auto:
+      description:
+      - Encryption keygen auto.
+    mariadb_encryption_keys:
+      description:
+      - Encryption keys.
+      type: dict
+      no_log: true
+    mariadb_encryption_password:
+      description:
+      - Encryption password.
+    mariadb_key_management_plugin:
+      description:
+      - Key management plugin.
+    mariadb_file_key_management_override:
+      description:
+      - File key management override.
+    mariadb_file_key_management_dir:
+      description:
+      - File key management dir.
+    mariadb_file_key_management_filekey:
+      description:
+      - File key management filekey.
+    mariadb_file_key_management_filename:
+      description:
+      - File key management filename.
+    mariadb_file_key_management_encryption_algorithm:
+      description:
+      - File key management encryption algorithm.
+    mariadb_innodb_encrypt_tables:
+      description:
+      - Innodb encrypt tables.
+    mariadb_innodb_encrypt_temporary_tables:
+      description:
+      - Innodb encrypt temporary tables.
+    mariadb_innodb_encrypt_log:
+      description:
+      - Innodb encrypt log.
+    mariadb_innodb_encryption_threads:
+      description:
+      - Innodb encryption threads.
+    mariadb_innodb_encryption_rotate_key_age:
+      description:
+      - Innodb encryption rotate key age.
+    mariadb_innodb_default_encryption_key_id:
+      description:
+      - Innodb default encryption key id.
+    mariadb_encrypt_tmp_disk_tables:
+      description:
+      - Encrypt tmp disk tables.
+    mariadb_encrypt_tmp_files:
+      description:
+      - Encrypt tmp files.
+    mariadb_encrypt_binlog:
+      description:
+      - Encrypt binlog.
+    mariadb_aria_encrypt_tables:
+      description:
+      - Aria encrypt tables.
+    mariadb_wait_timeout:
+      description:
+      - Wait timeout.
+    mariadb_net_read_timeout:
+      description:
+      - Net read timeout.
+    mariadb_skip_name_resolve:
+      description:
+      - Skip name resolve.
+    mariadb_max_connect_errors:
+      description:
+      - Max connect errors.
+    mariadb_open_files_limit:
+      description:
+      - Open files limit.
+    mariadb_interactive_timeout:
+      description:
+      - Interactive timeout.
+    mariadb_connect_timeout:
+      description:
+      - Connect timeout.
+    mariadb_table_definition_cache:
+      description:
+      - Table definition cache.
+    mariadb_systemd_override_dir:
+      description:
+      - Systemd override dir.
+    mariadb_systemd_override:
+      description:
+      - Systemd override.
+      type: list
+      elements: dict
+      options:
+        filename:
+          type: str
+          description:
+          - Filename.
+        section:
+          type: str
+          description:
+          - Section.
+        options:
+          type: dict
+          description:
+          - Options.
+    mariadb_backup:
+      description:
+      - Backup.
+    mariadb_backup_root_dir:
+      description:
+      - Backup root dir.
+    mariadb_backup_dbnames:
+      description:
+      - Backup dbnames.
+    mariadb_backup_dbexclude:
+      description:
+      - Backup dbexclude.
+    mariadb_backup_cron_job_name:
+      description:
+      - Backup cron job name.
+    mariadb_backup_schedule:
+      description:
+      - Backup schedule.
+    mariadb_backup_keep_count:
+      description:
+      - Backup keep count.
+    mariadb_backup_mail_addr:
+      description:
+      - Backup mail addr.
+    mariadb_config_file:
+      description:
+      - Config file.
+    mariadb_config_include_default_dirs:
+      description:
+      - Config include default dirs.
+    mariadb_manage_service:
+      description:
+      - Manage service.
+    mariadb_service_enabled:
+      description:
+      - Service enabled.
+    mariadb_service_state:
+      description:
+      - Service state.
+      choices:
+      - started
+      - stopped
+    mariadb_manage_firewall:
+      description:
+      - Manage firewall.
+    mariadb_firewall_sources:
+      description:
+      - Firewall sources.
+      type: list
+      elements: str
+    mariadb_packages:
+      description:
+      - Packages.
+      type: list
+      elements: str
+    mariadb_manage_accounts:
+      description:
+      - Manage accounts.
+    mariadb_initialize:
+      description:
+      - Initialize.
+    mariadb_allow_replication_reconfigure:
+      description:
+      - Allow replication reconfigure.
+    mariadb_allow_data_migration:
+      type: bool
+      description:
+      - Allow explicitly declared database import, restore, export or rename operations.
+    mariadb_remove_anonymous_users:
+      type: bool
+      description:
+      - Explicitly remove anonymous users.
+    mariadb_remove_test_database:
+      type: bool
+      description:
+      - Explicitly remove test database.
+    mariadb_manage_backup_schedule:
+      type: bool
+      description:
+      - Explicitly enable the configured cron backup schedule.
+    mariadb_allow_disable_encryption:
+      type: bool
+      description:
+      - Allow removal of managed encryption configuration only after a reviewed decryption procedure.
+  memcached:
+    memcached_verbose:
+      description:
+      - Verbose.
+    memcached_memory:
+      description:
+      - Memory.
+    memcached_port:
+      description:
+      - Port.
+    memcached_user:
+      description:
+      - User.
+    memcached_listen:
+      description:
+      - Listen.
+      type: list
+      elements: str
+    memcached_maxconn:
+      description:
+      - Maxconn.
+    memcached_extra_options:
+      description:
+      - Extra options.
+      type: list
+      elements: str
+    memcached_manage_service:
+      description:
+      - Manage service.
+    memcached_service_enabled:
+      description:
+      - Service enabled.
+    memcached_service_state:
+      description:
+      - Service state.
+      choices:
+      - started
+      - stopped
+    memcached_manage_firewall:
+      description:
+      - Manage firewall.
+    memcached_firewall_sources:
+      description:
+      - Firewall sources.
+      type: list
+      elements: str
+    memcached_packages:
+      description:
+      - Packages.
+      type: list
+      elements: str
+  patroni:
+    patroni_scope:
+      description:
+      - Scope.
+    patroni_name:
+      description:
+      - Name.
+    patroni_namespace:
+      description:
+      - Namespace.
+    patroni_version:
+      description:
+      - Version.
+    patroni_install:
+      description:
+      - Install.
+    patroni_bootstrap:
+      description:
+      - Bootstrap.
+    patroni_allow_adopt_existing:
+      description:
+      - Allow adopt existing.
+    patroni_manage_service:
+      description:
+      - Manage service.
+    patroni_service_enabled:
+      description:
+      - Service enabled.
+    patroni_service_state:
+      description:
+      - Service state.
+      choices:
+      - started
+      - stopped
+    patroni_manage_firewall:
+      description:
+      - Manage firewall.
+    patroni_firewall_sources:
+      description:
+      - Firewall sources.
+      type: list
+      elements: str
+    patroni_etcd_hosts:
+      description:
+      - Etcd hosts.
+      type: list
+      elements: str
+    patroni_etcd_protocol:
+      description:
+      - Etcd protocol.
+      choices:
+      - https
+      - http
+    patroni_etcd_ca_file:
+      description:
+      - Etcd ca file.
+    patroni_etcd_cert_file:
+      description:
+      - Etcd cert file.
+    patroni_etcd_key_file:
+      description:
+      - Etcd key file.
+    patroni_etcd_username:
+      description:
+      - Etcd username.
+    patroni_etcd_password:
+      description:
+      - Etcd password.
+    patroni_rest_listen:
+      description:
+      - Rest listen.
+    patroni_rest_connect_address:
+      description:
+      - Rest connect address.
+    patroni_rest_username:
+      description:
+      - Rest username.
+    patroni_rest_password:
+      description:
+      - Rest password.
+    patroni_rest_cert_file:
+      description:
+      - Rest cert file.
+    patroni_rest_key_file:
+      description:
+      - Rest key file.
+    patroni_postgresql_listen:
+      description:
+      - Postgresql listen.
+    patroni_postgresql_connect_address:
+      description:
+      - Postgresql connect address.
+    patroni_postgresql_data_dir:
+      description:
+      - Postgresql data dir.
+    patroni_superuser_username:
+      description:
+      - Superuser username.
+    patroni_superuser_password:
+      description:
+      - Superuser password.
+    patroni_replication_username:
+      description:
+      - Replication username.
+    patroni_replication_password:
+      description:
+      - Replication password.
+    patroni_pg_hba:
+      description:
+      - Pg hba.
+      type: list
+      elements: str
+    patroni_parameters:
+      description:
+      - Parameters.
+    patroni_bootstrap_dcs:
+      description:
+      - Bootstrap dcs.
+    patroni_tags:
+      description:
+      - Tags.
+    patroni_watchdog_mode:
+      description:
+      - Watchdog mode.
+      choices:
+      - "off"
+      - automatic
+      - required
+    patroni_watchdog_device:
+      description:
+      - Watchdog device.
+    patroni_ttl:
+      description:
+      - Ttl.
+    patroni_loop_wait:
+      description:
+      - Loop wait.
+    patroni_retry_timeout:
+      description:
+      - Retry timeout.
+    patroni_synchronous_mode:
+      description:
+      - Synchronous mode.
+    patroni_synchronous_node_count:
+      description:
+      - Synchronous node count.
+    patroni_synchronous_mode_strict:
+      description:
+      - Synchronous mode strict.
+    patroni_manage_objects:
+      type: bool
+      description:
+      - Enable explicit primary-aware objects management.
+    patroni_manage_backup:
+      type: bool
+      description:
+      - Enable explicit primary-aware backup management.
+  postgresql:
+    postgresql_version:
+      description:
+      - Version.
+    postgresql_debug:
+      description:
+      - Debug.
+    postgresql_locales:
+      description:
+      - Locales.
+      type: list
+      elements: str
+    postgresql_port:
+      description:
+      - Port.
+    postgresql_listen_addresses:
+      description:
+      - Listen addresses.
+    postgresql_max_connections:
+      description:
+      - Max connections.
+    postgresql_shared_preload_libraries:
+      description:
+      - Shared preload libraries.
+      type: list
+      elements: str
+    postgresql_auth_method:
+      description:
+      - Auth method.
+    postgresql_unix_socket_directories:
+      description:
+      - Unix socket directories.
+      type: list
+      elements: str
+    postgresql_unix_socket_directories_mode:
+      description:
+      - Unix socket directories mode.
+    postgresql_global_config_options:
+      description:
+      - Global config options.
+      type: list
+      elements: dict
+      options:
+        option:
+          type: str
+          description:
+          - Option.
+          required: true
+        value:
+          type: str
+          description:
+          - Value.
+          required: true
+        state:
+          type: str
+          description:
+          - State.
+    postgresql_global_config_options_extra:
+      description:
+      - Global config options extra.
+      type: list
+      elements: dict
+      options:
+        option:
+          type: str
+          description:
+          - Option.
+          required: true
+        value:
+          type: str
+          description:
+          - Value.
+          required: true
+        state:
+          type: str
+          description:
+          - State.
+    postgresql_log_dir:
+      description:
+      - Log dir.
+    postgresql_effective_log_dir:
+      description:
+      - Effective log dir.
+    postgresql_persist_permissions:
+      description:
+      - Persist permissions.
+    postgresql_tempfile_src_template_path:
+      description:
+      - Tempfile src template path.
+    postgresql_tempfile_dest_path:
+      description:
+      - Tempfile dest path.
+    postgresql_tempfile_mode:
+      description:
+      - Tempfile mode.
+    postgresql_tempfile_owner:
+      description:
+      - Tempfile owner.
+    postgresql_tempfile_group:
+      description:
+      - Tempfile group.
+    postgresql_hba_entries:
+      description:
+      - Hba entries.
+      type: list
+      elements: dict
+      options:
+        contype:
+          type: str
+          description:
+          - Contype.
+          required: true
+        databases:
+          type: str
+          description:
+          - Databases.
+          required: true
+        users:
+          type: str
+          description:
+          - Users.
+          required: true
+        address:
+          type: str
+          description:
+          - Address.
+        ip_address:
+          type: str
+          description:
+          - Ip address.
+        ip_mask:
+          type: str
+          description:
+          - Ip mask.
+        method:
+          type: str
+          description:
+          - Method.
+          required: true
+        auth_options:
+          type: str
+          description:
+          - Auth options.
+    postgresql_hba_entries_extra:
+      description:
+      - Hba entries extra.
+      type: list
+      elements: dict
+      options:
+        contype:
+          type: str
+          description:
+          - Contype.
+          required: true
+        databases:
+          type: str
+          description:
+          - Databases.
+          required: true
+        users:
+          type: str
+          description:
+          - Users.
+          required: true
+        address:
+          type: str
+          description:
+          - Address.
+        ip_address:
+          type: str
+          description:
+          - Ip address.
+        ip_mask:
+          type: str
+          description:
+          - Ip mask.
+        method:
+          type: str
+          description:
+          - Method.
+          required: true
+        auth_options:
+          type: str
+          description:
+          - Auth options.
+    postgresql_hba_template_path:
+      description:
+      - Hba template path.
+    postgresql_hba_use_raw:
+      description:
+      - Hba use raw.
+    postgresql_hba_raw:
+      description:
+      - Hba raw.
+    postgresql_cluster_name:
+      description:
+      - Cluster name.
+    postgresql_user:
+      description:
+      - User.
+    postgresql_group:
+      description:
+      - Group.
+    postgresql_service_state:
+      description:
+      - Service state.
+      choices:
+      - started
+      - stopped
+    postgresql_service_enabled:
+      description:
+      - Service enabled.
+    postgresql_tablespaces:
+      description:
+      - Tablespaces.
+      type: list
+      elements: dict
+      options:
+        location_mode:
+          type: str
+          description:
+          - Location mode.
+        location_create:
+          type: bool
+          description:
+          - Location create.
+        state:
+          type: str
+          description:
+          - State.
+          choices:
+          - present
+          - absent
+        location_owner:
+          type: str
+          description:
+          - Location owner.
+        location_group:
+          type: str
+          description:
+          - Location group.
+        location:
+          type: str
+          description:
+          - Location.
+        owner:
+          type: str
+          description:
+          - Owner.
+        session_role:
+          type: str
+          description:
+          - Session role.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        name:
+          type: str
+          description:
+          - Name.
+          required: true
+        set:
+          type: dict
+          description:
+          - Set.
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        rename_to:
+          type: str
+          description:
+          - Rename to.
+        login_user:
+          type: str
+          description:
+          - Login user.
+    postgresql_users:
+      description:
+      - Users.
+      type: list
+      elements: dict
+      options:
+        no_password_changes:
+          type: bool
+          description:
+          - No password changes.
+        encrypted:
+          type: bool
+          description:
+          - Encrypted.
+        comment:
+          type: str
+          description:
+          - Comment.
+        expires:
+          type: str
+          description:
+          - Expires.
+        conn_limit:
+          type: int
+          description:
+          - Conn limit.
+        session_role:
+          type: str
+          description:
+          - Session role.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        name:
+          type: str
+          description:
+          - Name.
+          required: true
+        db:
+          type: str
+          description:
+          - Db.
+        state:
+          type: str
+          description:
+          - State.
+          choices:
+          - present
+          - absent
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        password:
+          type: str
+          description:
+          - Password.
+          no_log: true
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        fail_on_user:
+          type: bool
+          description:
+          - Fail on user.
+        role_attr_flags:
+          type: str
+          description:
+          - Role attr flags.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        login_user:
+          type: str
+          description:
+          - Login user.
+    postgres_users_no_log:
+      description:
+      - Postgres users no log.
+    postgresql_memberships:
+      description:
+      - Memberships.
+      type: list
+      elements: dict
+      options:
+        target_roles:
+          type: list
+          description:
+          - Target roles.
+          elements: str
+        session_role:
+          type: str
+          description:
+          - Session role.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        db:
+          type: str
+          description:
+          - Db.
+        state:
+          type: str
+          description:
+          - State.
+          choices:
+          - present
+          - absent
+        groups:
+          type: list
+          description:
+          - Groups.
+          elements: str
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        fail_on_user:
+          type: bool
+          description:
+          - Fail on user.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        login_user:
+          type: str
+          description:
+          - Login user.
+    postgresql_databases:
+      description:
+      - Databases.
+      type: list
+      elements: dict
+      options:
+        force:
+          type: bool
+          description:
+          - Force.
+        conn_limit:
+          type: int
+          description:
+          - Conn limit.
+        name:
+          type: str
+          description:
+          - Name.
+          required: true
+        login_password:
+          type: str
+          description:
+          - Login password.
+          no_log: true
+        state:
+          type: str
+          description:
+          - State.
+          choices:
+          - present
+          - absent
+          - dump
+          - restore
+          - rename
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        encoding:
+          type: str
+          description:
+          - Encoding.
+        target_opts:
+          type: str
+          description:
+          - Target opts.
+        maintenance_db:
+          type: str
+          description:
+          - Maintenance db.
+        target:
+          type: str
+          description:
+          - Target.
+        login_host:
+          type: str
+          description:
+          - Login host.
+        session_role:
+          type: str
+          description:
+          - Session role.
+        template:
+          type: str
+          description:
+          - Template.
+        lc_collate:
+          type: str
+          description:
+          - Lc collate.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        lc_ctype:
+          type: str
+          description:
+          - Lc ctype.
+        login_user:
+          type: str
+          description:
+          - Login user.
+        tablespace:
+          type: str
+          description:
+          - Tablespace.
+        owner:
+          type: str
+          description:
+          - Owner.
+        dump_extra_args:
+          type: str
+          description:
+          - Dump extra args.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+    postgresql_schemas:
+      description:
+      - Schemas.
+      type: list
+      elements: dict
+      options:
+        owner:
+          type: str
+          description:
+          - Owner.
+        cascade_drop:
+          type: bool
+          description:
+          - Cascade drop.
+        session_role:
+          type: str
+          description:
+          - Session role.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        name:
+          type: str
+          description:
+          - Name.
+          required: true
+        db:
+          type: str
+          description:
+          - Db.
+        state:
+          type: str
+          description:
+          - State.
+          choices:
+          - present
+          - absent
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        login_user:
+          type: str
+          description:
+          - Login user.
+    postgresql_tables:
+      description:
+      - Tables.
+      type: list
+      elements: dict
+      options:
+        name:
+          type: str
+          description:
+          - Name.
+          required: true
+        state:
+          type: str
+          description:
+          - State.
+          choices:
+          - present
+          - absent
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        unlogged:
+          type: bool
+          description:
+          - Unlogged.
+        columns:
+          type: list
+          description:
+          - Columns.
+          elements: str
+        db:
+          type: str
+          description:
+          - Db.
+        session_role:
+          type: str
+          description:
+          - Session role.
+        rename:
+          type: str
+          description:
+          - Rename.
+        truncate:
+          type: bool
+          description:
+          - Truncate.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        login_user:
+          type: str
+          description:
+          - Login user.
+        tablespace:
+          type: str
+          description:
+          - Tablespace.
+        owner:
+          type: str
+          description:
+          - Owner.
+        storage_params:
+          type: str
+          description:
+          - Storage params.
+        like:
+          type: str
+          description:
+          - Like.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        including:
+          type: str
+          description:
+          - Including.
+        cascade:
+          type: bool
+          description:
+          - Cascade.
+    postgresql_ownerships:
+      description:
+      - Ownerships.
+      type: list
+      elements: dict
+      options:
+        obj_type:
+          type: str
+          description:
+          - Obj type.
+        reassign_owned_by:
+          type: list
+          description:
+          - Reassign owned by.
+          elements: str
+        new_owner:
+          type: str
+          description:
+          - New owner.
+        session_role:
+          type: str
+          description:
+          - Session role.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        db:
+          type: str
+          description:
+          - Db.
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        obj_name:
+          type: str
+          description:
+          - Obj name.
+        fail_on_role:
+          type: str
+          description:
+          - Fail on role.
+        login_user:
+          type: str
+          description:
+          - Login user.
+    postgresql_privs:
+      description:
+      - Privs.
+      type: list
+      elements: dict
+      options:
+        roles:
+          type: str
+          description:
+          - Roles.
+        objs:
+          type: str
+          description:
+          - Objs.
+        target_roles:
+          type: list
+          description:
+          - Target roles.
+          elements: str
+        session_role:
+          type: str
+          description:
+          - Session role.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        db:
+          type: str
+          description:
+          - Db.
+        state:
+          type: str
+          description:
+          - State.
+          choices:
+          - present
+          - absent
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        type:
+          type: str
+          description:
+          - Type.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        schema:
+          type: str
+          description:
+          - Schema.
+        grant_option:
+          type: bool
+          description:
+          - Grant option.
+        fail_on_user:
+          type: bool
+          description:
+          - Fail on user.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        privs:
+          type: str
+          description:
+          - Privs.
+        login_user:
+          type: str
+          description:
+          - Login user.
+    postgresql_extensions:
+      description:
+      - Extensions.
+      type: list
+      elements: dict
+      options:
+        login_host:
+          type: str
+          description:
+          - Login host.
+        session_role:
+          type: str
+          description:
+          - Session role.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        name:
+          type: str
+          description:
+          - Name.
+          required: true
+        db:
+          type: str
+          description:
+          - Db.
+        state:
+          type: str
+          description:
+          - State.
+          choices:
+          - present
+          - absent
+        login_password:
+          type: str
+          description:
+          - Login password.
+          no_log: true
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        schema:
+          type: str
+          description:
+          - Schema.
+        cascade:
+          type: bool
+          description:
+          - Cascade.
+        version:
+          type: str
+          description:
+          - Version.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        login_user:
+          type: str
+          description:
+          - Login user.
+    postgresql_queries:
+      description:
+      - Queries.
+      type: list
+      elements: dict
+      options:
+        positional_args:
+          type: list
+          description:
+          - Positional args.
+          elements: str
+        autocommit:
+          type: bool
+          description:
+          - Autocommit.
+        named_args:
+          type: dict
+          description:
+          - Named args.
+        query:
+          type: str
+          description:
+          - Query.
+        session_role:
+          type: str
+          description:
+          - Session role.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        db:
+          type: str
+          description:
+          - Db.
+        search_path:
+          type: list
+          description:
+          - Search path.
+          elements: str
+        changed_when:
+          type: str
+          description:
+          - Changed when.
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        encoding:
+          type: str
+          description:
+          - Encoding.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        login_user:
+          type: str
+          description:
+          - Login user.
+    postgresql_scripts:
+      description:
+      - Scripts.
+      type: list
+      elements: dict
+      options:
+        positional_args:
+          type: list
+          description:
+          - Positional args.
+          elements: str
+        named_args:
+          type: dict
+          description:
+          - Named args.
+        session_role:
+          type: str
+          description:
+          - Session role.
+        login_unix_socket:
+          type: str
+          description:
+          - Login unix socket.
+        db:
+          type: str
+          description:
+          - Db.
+        search_path:
+          type: list
+          description:
+          - Search path.
+          elements: str
+        path:
+          type: str
+          description:
+          - Path.
+        ssl_mode:
+          type: str
+          description:
+          - Ssl mode.
+        trust_input:
+          type: bool
+          description:
+          - Trust input.
+        encoding:
+          type: str
+          description:
+          - Encoding.
+        ca_cert:
+          type: str
+          description:
+          - Ca cert.
+        login_user:
+          type: str
+          description:
+          - Login user.
+    postgresql_autotune:
+      description:
+      - Autotune.
+    postgresql_autotune_config_options:
+      description:
+      - Autotune config options.
+      type: list
+      elements: dict
+      options:
+        option:
+          type: str
+          description:
+          - Option.
+          required: true
+        value:
+          type: str
+          description:
+          - Value.
+          required: true
+        state:
+          type: str
+          description:
+          - State.
+    postgresql_autotune_os_type:
+      description:
+      - Autotune os type.
+    postgresql_autotune_arch:
+      description:
+      - Autotune arch.
+    postgresql_autotune_drive_type:
+      description:
+      - Autotune drive type.
+    postgresql_autotune_env_name:
+      description:
+      - Autotune env name.
+    postgresql_autotune_include_badger:
+      description:
+      - Autotune include badger.
+    postgresql_autotune_cpus:
+      description:
+      - Autotune cpus.
+    postgresql_autotune_total_ram:
+      description:
+      - Autotune total ram.
+    postgresql_autotune_pg_version:
+      description:
+      - Autotune pg version.
+    postgresql_autotune_base_url:
+      description:
+      - Autotune base url.
+    postgresql_autotune_url:
+      description:
+      - Autotune url.
+    postgresql_backup:
+      description:
+      - Backup.
+    postgresql_backup_root_dir:
+      description:
+      - Backup root dir.
+    postgresql_backup_script_dest:
+      description:
+      - Backup script dest.
+    postgresql_backup_create_database:
+      description:
+      - Backup create database.
+    postgresql_backup_dbnames:
+      description:
+      - Backup dbnames.
+    postgresql_backup_dbexclude:
+      description:
+      - Backup dbexclude.
+    postgresql_backup_cron_job_name:
+      description:
+      - Backup cron job name.
+    postgresql_backup_schedule:
+      description:
+      - Backup schedule.
+    postgresql_backup_mail_addr:
+      description:
+      - Backup mail addr.
+    postgresql_backup_doweekly:
+      description:
+      - Backup doweekly.
+    postgresql_backup_domonthly:
+      description:
+      - Backup domonthly.
+    postgresql_backup_brdaily:
+      description:
+      - Backup brdaily.
+    postgresql_backup_brweekly:
+      description:
+      - Backup brweekly.
+    postgresql_backup_brmontly:
+      description:
+      - Backup brmontly.
+    postgresql_backup_perm:
+      description:
+      - Backup perm.
+    postgresql_backup_implementation:
+      description:
+      - Backup implementation.
+      choices:
+      - legacy
+      - custom_encrypted
+    postgresql_backup_encryption_passphrase:
+      description:
+      - Backup encryption passphrase.
+    postgresql_backup_passphrase_file:
+      description:
+      - Backup passphrase file.
+    postgresql_backup_daily_retention:
+      description:
+      - Backup daily retention.
+    postgresql_backup_weekly_retention:
+      description:
+      - Backup weekly retention.
+    postgresql_backup_systemd_calendar:
+      description:
+      - Backup systemd calendar.
+    postgresql_backup_restore_test_calendar:
+      description:
+      - Backup restore test calendar.
+    postgresql_backup_restore_test_database:
+      description:
+      - Backup restore test database.
+    postgresql_backup_metrics_file:
+      description:
+      - Backup metrics file.
+    postgresql_backup_metrics_directory_owner:
+      description:
+      - Backup metrics directory owner.
+    postgresql_backup_metrics_directory_group:
+      description:
+      - Backup metrics directory group.
+    postgresql_backup_metrics_directory_mode:
+      description:
+      - Backup metrics directory mode.
+    postgresql_backup_custom_script_dest:
+      description:
+      - Backup custom script dest.
+    postgresql_http_general_proxy:
+      description:
+      - Http general proxy.
+    postgresql_https_general_proxy:
+      description:
+      - Https general proxy.
+    postgresql_http_pkg_proxy:
+      description:
+      - Http pkg proxy.
+    postgresql_https_pkg_proxy:
+      description:
+      - Https pkg proxy.
+    postgresql_manage_service:
+      description:
+      - Manage service.
+    postgresql_manage_firewall:
+      description:
+      - Manage firewall.
+    postgresql_firewall_sources:
+      description:
+      - Firewall sources.
+      type: list
+      elements: str
+    postgresql_packages:
+      description:
+      - Packages.
+      type: list
+      elements: str
+    postgresql_initialize:
+      description:
+      - Initialize.
+    postgresql_manage_objects:
+      description:
+      - Manage objects.
+    postgresql_manage_backup_timers:
+      description:
+      - Manage backup timers.
+    postgresql_backup_restore_test_enabled:
+      description:
+      - Backup restore test enabled.
+    postgresql_data_dir:
+      description:
+      - Data dir.
+    postgresql_config_path:
+      description:
+      - Config path.
+    postgresql_bin_path:
+      description:
+      - Bin path.
+    postgresql_daemon:
+      description:
+      - Daemon.
+    postgresql_service_path:
+      description:
+      - Service path.
+    postgresql_deployment_mode:
+      description:
+      - Deployment mode.
+      choices:
+      - standalone
+      - patroni
+    postgresql_backup_primary_only:
+      type: bool
+      description:
+      - Skip scheduled backup and restore work on HA replicas.
+    postgresql_allow_data_migration:
+      type: bool
+      description:
+      - Allow explicitly declared database import, restore, export or rename operations.
+    postgresql_manage_backup_schedule:
+      type: bool
+      description:
+      - Explicitly enable the configured cron backup schedule.
+  redis:
+    redis_master_ip:
+      description:
+      - Master ip.
+    redis_server_port:
+      description:
+      - Server port.
+    redis_server_databases_number:
+      description:
+      - Server databases number.
+    redis_server_databases_dir:
+      description:
+      - Server databases dir.
+    redis_conf_default:
+      description:
+      - Conf default.
+    redis_conf:
+      description:
+      - Conf.
+    redis_sentinel_enabled:
+      description:
+      - Sentinel enabled.
+    redis_sentinel_listen:
+      description:
+      - Sentinel listen.
+    redis_sentinel_port:
+      description:
+      - Sentinel port.
+    redis_sentinel_databases_dir:
+      description:
+      - Sentinel databases dir.
+    redis_sentinel_quorum:
+      description:
+      - Sentinel quorum.
+    redis_sentinel_master_name:
+      description:
+      - Sentinel master name.
+    redis_sentinel_downafter:
+      description:
+      - Sentinel downafter.
+    redis_sentinel_failover_timeout:
+      description:
+      - Sentinel failover timeout.
+    redis_sentinel_conf:
+      description:
+      - Sentinel conf.
+    redis_sentinel_sentinel_conf:
+      description:
+      - Sentinel sentinel conf.
+    redis_sentinel_master_conf:
+      description:
+      - Sentinel master conf.
+    redis_manage_service:
+      description:
+      - Manage service.
+    redis_service_enabled:
+      description:
+      - Service enabled.
+    redis_service_state:
+      description:
+      - Service state.
+      choices:
+      - started
+      - stopped
+    redis_manage_firewall:
+      description:
+      - Manage firewall.
+    redis_firewall_sources:
+      description:
+      - Firewall sources.
+      type: list
+      elements: str
+    redis_packages:
+      description:
+      - Packages.
+      type: list
+      elements: str
+    redis_server_password:
+      description:
+      - Redis authentication secret. Sentinel requires at least 20 URL-safe characters to survive native configuration rewrites.
+    redis_server_bind:
+      description:
+      - Server bind.
+      type: list
+      elements: str
+    redis_manage_sysctl:
+      description:
+      - Manage sysctl.
+    redis_role:
+      description:
+      - Role.
+      choices:
+      - standalone
+      - primary
+      - replica
+    redis_sentinel_allow_reconfigure:
+      type: bool
+      description:
+      - Explicitly replace Sentinel-managed Redis configuration during a reviewed maintenance window.
+role_example_playbooks:
+  etcd: "# Required cluster addresses, PKI and Vault inputs: docs/patroni.md.\n- name: Configure etcd\n  hosts: database_ha\n  become: true\n  gather_facts: true\n  roles:\n  - role: degitag.database.etcd"
+  mariadb: "- name: Configure MariaDB\n  hosts: mariadb_servers\n  become: true\n  gather_facts: true\n  roles:\n  - role: degitag.database.mariadb\n    vars:\n      mariadb_initialize: true\n      mariadb_users:\n      - name: application\n        password: \"{{ vault_application_db_password }}\"\n        priv: application.*:ALL\n      mariadb_databases:\n      - name: application"
+  memcached: "- name: Configure a local application cache\n  hosts: memcached_servers\n  become: true\n  gather_facts: true\n  roles:\n  - role: degitag.database.memcached\n    vars:\n      memcached_memory: 128\n      memcached_listen: [127.0.0.1]"
+  patroni: "# Required cluster addresses, PKI and Vault inputs: docs/patroni.md.\n- name: Configure patroni\n  hosts: database_ha\n  become: true\n  gather_facts: true\n  roles:\n  - role: degitag.database.patroni"
+  postgresql: "- name: Configure PostgreSQL\n  hosts: postgresql_servers\n  become: true\n  gather_facts: true\n  roles:\n  - role: degitag.database.postgresql\n    vars:\n      postgresql_initialize: true\n      postgresql_users:\n      - name: application\n        password: \"{{ vault_application_db_password }}\"\n      postgresql_databases:\n      - name: application\n        owner: application"
+  redis: "- name: Configure a local application cache\n  hosts: redis_servers\n  become: true\n  gather_facts: true\n  roles:\n  - role: degitag.database.redis\n    vars:\n      redis_conf:\n        maxmemory: 256mb\n        maxmemory-policy: allkeys-lru"
+role_licenses:
+  mariadb: MPL-2.0
+  postgresql: MPL-2.0
+  redis: MPL-2.0
+  memcached: MPL-2.0

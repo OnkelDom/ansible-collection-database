@@ -3,4 +3,5 @@
   hosts: all
   gather_facts: true
   roles:
-    - role: lenmail.database.redis
+  - role: degitag.database.redis
+  become: true

@@ -1,0 +1,37 @@
+---
+- name: Configure validate
+  ansible.builtin.import_tasks: validate.yml
+- name: Install native service packages on Debian family
+  ansible.builtin.apt:
+    name: '{{ memcached_packages | default(_memcached_packages, true) }}'
+    state: present
+    policy_rc_d: 101
+  when: ansible_facts['os_family'] == 'Debian'
+- name: Install native service packages on EL9
+  ansible.builtin.dnf:
+    name: '{{ memcached_packages | default(_memcached_packages, true) }}'
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+- name: Render native Memcached configuration
+  ansible.builtin.template:
+    src: memcached.conf.j2
+    dest: '{{ _memcached_config }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+  - Restart memcached
+- name: Configure selinux
+  ansible.builtin.import_tasks: selinux.yml
+- name: Apply requested service state
+  ansible.builtin.service:
+    name: '{{ _memcached_service }}'
+    enabled: '{{ memcached_service_enabled }}'
+    state: '{{ memcached_service_state }}'
+  when: memcached_manage_service
+- name: Delegate additive port rules to the host firewall
+  ansible.builtin.include_role:
+    name: degitag.infrastructure.firewall
+  vars:
+    firewall_rules: '{{ memcached_firewall_sources | map(''community.general.dict_kv'', ''source'') | map(''combine'', {''port'': memcached_port | string, ''proto'': ''tcp'', ''action'': ''allow''}) | list }}'
+  when: memcached_manage_firewall

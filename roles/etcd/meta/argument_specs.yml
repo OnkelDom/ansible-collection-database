@@ -1,0 +1,139 @@
+---
+argument_specs:
+  main:
+    short_description: Entry point for the etcd role.
+    description:
+    - Validate variables for the `etcd` role.
+    options:
+      etcd_version:
+        description:
+        - Version.
+        required: false
+        type: str
+      etcd_install:
+        description:
+        - Install.
+        required: false
+        type: bool
+      etcd_initialize:
+        description:
+        - Initialize.
+        required: false
+        type: bool
+      etcd_name:
+        description:
+        - Name.
+        required: false
+        type: str
+      etcd_initial_cluster:
+        description:
+        - Initial cluster.
+        required: false
+        type: dict
+      etcd_initial_cluster_token:
+        description:
+        - Initial cluster token.
+        required: false
+        type: str
+        no_log: true
+      etcd_initial_cluster_state:
+        description:
+        - Initial cluster state.
+        required: false
+        type: str
+        choices:
+        - new
+        - existing
+      etcd_data_dir:
+        description:
+        - Data dir.
+        required: false
+        type: str
+      etcd_listen_client_urls:
+        description:
+        - Listen client urls.
+        required: false
+        type: list
+        elements: str
+      etcd_advertise_client_urls:
+        description:
+        - Advertise client urls.
+        required: false
+        type: list
+        elements: str
+      etcd_listen_peer_urls:
+        description:
+        - Listen peer urls.
+        required: false
+        type: list
+        elements: str
+      etcd_initial_advertise_peer_urls:
+        description:
+        - Initial advertise peer urls.
+        required: false
+        type: list
+        elements: str
+      etcd_tls_enabled:
+        description:
+        - Tls enabled.
+        required: false
+        type: bool
+      etcd_ca_file:
+        description:
+        - Ca file.
+        required: false
+        type: str
+      etcd_cert_file:
+        description:
+        - Cert file.
+        required: false
+        type: str
+      etcd_key_file:
+        description:
+        - Key file.
+        required: false
+        type: str
+      etcd_peer_ca_file:
+        description:
+        - Peer ca file.
+        required: false
+        type: str
+      etcd_peer_cert_file:
+        description:
+        - Peer cert file.
+        required: false
+        type: str
+      etcd_peer_key_file:
+        description:
+        - Peer key file.
+        required: false
+        type: str
+      etcd_manage_service:
+        description:
+        - Manage service.
+        required: false
+        type: bool
+      etcd_service_enabled:
+        description:
+        - Service enabled.
+        required: false
+        type: bool
+      etcd_service_state:
+        description:
+        - Service state.
+        required: false
+        type: str
+        choices:
+        - started
+        - stopped
+      etcd_manage_firewall:
+        description:
+        - Manage firewall.
+        required: false
+        type: bool
+      etcd_firewall_sources:
+        description:
+        - Firewall sources.
+        required: false
+        type: list
+        elements: str
