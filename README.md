@@ -1,9 +1,10 @@
 # Ansible Collection `degitag.database`
 
-[![CI](https://github.com/OnkelDom/ansible-collection-database/actions/workflows/ci.yml/badge.svg)](https://github.com/OnkelDom/ansible-collection-database/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/OnkelDom/ansible-collection-database)](https://github.com/OnkelDom/ansible-collection-database/releases)
-[![Tag](https://img.shields.io/github/v/tag/OnkelDom/ansible-collection-database)](https://github.com/OnkelDom/ansible-collection-database/tags)
+[![CI](https://github.com/degitag/ansible-collection-database/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/degitag/ansible-collection-database/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/degitag/ansible-collection-database)](https://github.com/degitag/ansible-collection-database/releases)
+[![Tag](https://img.shields.io/github/v/tag/degitag/ansible-collection-database?sort=date)](https://github.com/degitag/ansible-collection-database/tags)
 ![Ansible Core](https://img.shields.io/badge/ansible--core-2.20%20%7C%202.21-blue)
+[![License: MIT / MPL-2.0 / GPL-2.0-or-later](https://img.shields.io/badge/license-MIT%20%2F%20MPL--2.0%20%2F%20GPL--2.0--or--later-green)](docs/licenses.md)
 
 Native Datenbanken, Caches und PostgreSQL-HA mit expliziter Daten- und Dienstverantwortung.
 

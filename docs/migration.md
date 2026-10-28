@@ -2,7 +2,7 @@
 
 ## Namespace und Controller
 
-`degit.database`, `onkeldom.database` und `lenmail.database` werden durch `degitag.database` ersetzt. GitHub-Ziel ist `OnkelDom/ansible-collection-database`. Die vier Collections verwenden denselben Rollenaufbau, dieselbe Zielmatrix und denselben lokalen Prüfaufruf. Bestehende Inventory-Eingaben vor einem Rollout anhand der jeweiligen Argument-Specs überprüfen.
+`degit.database`, `onkeldom.database` und `lenmail.database` werden durch `degitag.database` ersetzt. GitHub-Ziel ist `degitag/ansible-collection-database`. Die vier Collections verwenden denselben Rollenaufbau, dieselbe Zielmatrix und denselben lokalen Prüfaufruf. Bestehende Inventory-Eingaben vor einem Rollout anhand der jeweiligen Argument-Specs überprüfen.
 
 Controller installieren das neue Artefakt `degitag-database-2.0.0.tar.gz`. In Requirements, Playbooks und Rollenaufrufen muss `degit.database` durch `degitag.database` ersetzt werden; beispielsweise wird `degit.database.postgresql` zu `degitag.database.postgresql`. Der alte Namespace wird nicht als Alias bereitgestellt. Beide Namespaces können auf dem Controller parallel installiert sein; entscheidend ist der vollständige Rollenname im aufrufenden Playbook.
 
